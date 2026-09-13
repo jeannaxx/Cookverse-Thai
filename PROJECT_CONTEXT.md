@@ -118,6 +118,7 @@ Branch ที่รับผิดชอบ: `feature/gameplay-content-ui`
 
 ### กติกาการทำงานร่วมกัน
 
+- ลำดับเริ่มงานรอบนี้คือ Mac M5 ทำ XR Foundation และมาตรฐาน Interaction ให้เสร็จก่อน จากนั้นรวมเข้า `develop` แล้ว Mac M1 จึงดึงข้อมูลล่าสุดจาก `develop` ไปทำ Gameplay Module, Prefab และ UI ต่อ
 - `main` เก็บงานที่ทดสอบผ่านและพร้อมนำเสนอ ทั้งสองคนไม่พัฒนางานใหม่บน branch นี้โดยตรง
 - `develop` ใช้รวมงานจาก Mac M5 และ Mac M1 เพื่อทดสอบระบบร่วมกัน
 - `feature/xr-webxr-integration` เป็นพื้นที่ทำงานหลักของผู้ใช้ Mac M5
