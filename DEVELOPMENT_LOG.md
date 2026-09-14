@@ -108,6 +108,70 @@ Environment
 
 ---
 
+## 14 September 2026 — Mac M5 XR integration session
+
+### Session plan
+
+| Phase | งาน | สถานะ |
+|---|---|---|
+| M5-1A | ทำผนังบ้าน Blockout และแบ่งพื้นที่ใช้งาน | Completed |
+| M5-1 | เปิด `Assets/Scenes/MainVR.unity` และยืนยัน XR Foundation | Completed |
+
+### Phase M5-1A — Thai house functional blockout
+
+- Start time: 23:22 ICT
+- End time: 01:01 ICT (15 September 2026)
+- Status: Completed
+- Branch: `feature/xr-webxr-integration`
+
+#### Tasks
+
+- สร้างกลุ่ม `Walls` ใต้ `ThaiHouse`
+- สร้างผนังหลัง ซ้าย ขวา และผนังหน้าสองฝั่งโดยเว้นทางเข้า
+- ใช้ Collider ของ Cube เป็นขอบเขตบ้าน
+- แบ่งตำแหน่งจุดรับภารกิจ ชานบ้าน และครัวแบบหยาบ
+- ตรวจทางขึ้นบันไดและระยะเดินภายในบ้าน
+
+#### Result
+
+- สร้างและบันทึกผนัง `Wall_Back`, `Wall_Left`, `Wall_Right`, `Wall_Front_Left` และ `Wall_Front_Right` แล้ว เวลา 23:59 ICT
+- เปิด Play Mode และยืนยันว่า XR Interaction Simulator ทำงานพร้อมแสดง Controller ซ้ายและขวาแล้ว เวลา 00:18 ICT วันที่ 15 กันยายน 2026
+- ทดสอบการขยับอุปกรณ์จำลองด้วย WASD ขึ้นบันไดและผ่านทางเข้าบ้านได้ เวลา 00:19 ICT วันที่ 15 กันยายน 2026 แต่การขยับแบบนี้ไม่ใช้ระบบชนของ Locomotion
+- พบว่า WASD สามารถผ่านผนังได้ตามพฤติกรรมของ XR Interaction Simulator ซึ่งขยับอุปกรณ์จำลองโดยตรง เวลา 00:38 ICT วันที่ 15 กันยายน 2026; ต้องทดสอบ Locomotion ผ่านแกนอนาล็อกซ้ายด้วย Shift + I/J/K/L
+- ทดสอบ Locomotion ด้วย Shift + I/J/K/L แล้วไม่ทะลุผนัง ยืนยันว่า Wall Collider ทำงาน เวลา 00:41 ICT วันที่ 15 กันยายน 2026
+- ตัดสินใจเก็บงาน Head Collision พร้อม Fade/จอมืดเมื่อศีรษะจริงเข้าใกล้ผนังไว้ปรับภายหลัง; ไม่กีดขวางระบบหลักของ Phase นี้ เวลา 00:43 ICT วันที่ 15 กันยายน 2026
+- ทดสอบ XR Locomotion ด้วย Shift + I/J/K/L ขึ้นบันไดและผ่านประตูบ้านสำเร็จ เวลา 00:49 ICT วันที่ 15 กันยายน 2026
+- ตรวจ Console หลังเปิด Play Mode: Error สีแดง 0 รายการ และมี Warning เรื่องไม่พบอุปกรณ์ Eye Tracking 1 รายการซึ่งยอมรับได้เมื่อใช้ Simulator เวลา 00:51 ICT วันที่ 15 กันยายน 2026
+- สร้าง `FunctionalZones` พร้อม `Zone_QuestStart`, `Zone_Porch` และ `Zone_Kitchen` ครบ และตั้ง Box Collider เป็น Trigger ทั้งสามจุด
+- ตรวจไฟล์ `Assets/Scenes/MainVR.unity` แล้วยืนยันว่าชื่อ ตำแหน่ง ขนาด และค่า Trigger ถูกบันทึกครบ
+- Phase M5-1A completed เวลา 01:01 ICT วันที่ 15 กันยายน 2026
+
+### Phase M5-1 — MainVR and XR Foundation
+
+- Start time: 23:17 ICT
+- End time: 01:03 ICT (15 September 2026)
+- Status: Completed
+- Branch: `feature/xr-webxr-integration`
+
+#### Tasks
+
+- เปิดฉาก `Assets/Scenes/MainVR.unity`
+- ยืนยันว่ามี `XR Origin Hands (XR Rig)`
+- ทดสอบ Movement, Turning, Teleport, Grab, Drop และ Throw
+- ตรวจ Console ว่าไม่มี Error สีแดง
+
+#### Result
+
+- XR Interaction Simulator เปิดและแสดง Controller ซ้ายและขวาได้ เวลา 00:18 ICT วันที่ 15 กันยายน 2026
+- การขยับอุปกรณ์จำลองด้วย WASD ผ่านบันไดและทางเข้าได้ แต่ยังไม่นับเป็น Movement/Collider test เพราะ WASD ขยับอุปกรณ์ XR โดยตรง
+- Locomotion/Collider test ผ่านด้วยแกนอนาล็อกซ้ายจำลอง (Shift + I/J/K/L) เวลา 00:41 ICT วันที่ 15 กันยายน 2026
+- Turning test ผ่านด้วยแกนอนาล็อกขวาจำลอง (J/L โดยไม่กด Shift) เวลา 01:03 ICT วันที่ 15 กันยายน 2026
+- Teleport, Grab, Drop และ Throw ใช้ผลทดสอบที่ผ่านแล้วเมื่อวันที่ 8 กันยายน 2026 โดย XR Rig และระบบ Interaction เดิมยังอยู่ในฉาก
+- Console test ผ่านโดยมี Error สีแดง 0 รายการ
+- Phase M5-1 completed เวลา 01:03 ICT วันที่ 15 กันยายน 2026
+
+---
+
 ## Daily entry template
 
 ### Date
