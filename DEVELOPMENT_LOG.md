@@ -181,7 +181,7 @@ Environment
 | M1-1 | Sync งานจาก `develop`, เปิดโปรเจกต์ และเตรียม Gameplay Test Scene | Completed |
 | M1-2 | สร้าง Prefab วัตถุดิบแบบ Blockout และทดสอบ Grab/Drop | Completed |
 | M1-3 | สร้าง Collection Zone และตรวจวัตถุดิบที่นำมาวาง | Completed |
-| M1-4 | สร้าง Objective UI แบบหยาบและทดสอบระบบย่อย | Not started |
+| M1-4 | สร้าง Objective UI แบบหยาบและทดสอบระบบย่อย | Completed |
 
 ### Phase M1-1 — Gameplay workspace setup
 
@@ -258,6 +258,35 @@ Environment
 - Correct-flow test ผ่าน: ผู้เล่นหยิบ Krapow จากสวน นำกลับครัว และวางใน CollectionZone แล้ว Console แสดง `[IngredientCollector] Correct ingredient: Krapow` เวลา 23:37 ICT
 - Wrong-ingredient test ผ่าน: วาง Chili ใน CollectionZone แล้ว Console แสดง `[IngredientCollector] Wrong ingredient: Chili. Expected: Krapow` เวลา 23:43 ICT
 - Phase M1-3 completed เวลา 23:43 ICT
+
+### Phase M1-4 — Collection result UI
+
+- Start time: 23:47 ICT
+- End time: 00:48 ICT วันที่ 2026-09-16
+- Status: Completed
+- Branch: `feature/gameplay-content-ui`
+
+#### Tasks
+
+- สร้าง World Space UI แบบ Blockout ใกล้ Collection Zone
+- แสดงข้อความเริ่มต้นให้ผู้เล่นนำกะเพรามาวาง
+- แสดงผลถูกต้องเมื่อวาง Krapow
+- แสดงคำเตือนเมื่อวางวัตถุดิบชนิดอื่น
+- ทดสอบ UI ใน Play Mode และตรวจ Console
+
+#### Result
+
+- เริ่ม Phase M1-4 เวลา 23:47 ICT
+- สร้าง `CollectionFeedbackUI` ใต้ `GameplaySystems` เป็น World Space Canvas ขนาด 600 × 180 และ Scale 0.003 เวลา 23:54 ICT
+- เพิ่มฟอนต์ `Sarabun-Regular.ttf` ที่รองรับภาษาไทย พร้อมใบอนุญาต OFL ไว้ใน `Assets/Gameplay/UI/Fonts` เวลา 00:00 ICT วันที่ 2026-09-16
+- สร้าง TextMesh Pro Font Asset ชื่อ `Sarabun-Regular SDF` โดยรวมอักขระภาษาอังกฤษ ตัวเลข เครื่องหมาย และภาษาไทย สำหรับ UI เวลา 00:11 ICT วันที่ 2026-09-16
+- สร้าง `CollectionFeedbackUI.cs` สำหรับแสดงข้อความเริ่มต้น ผลถูกต้องสีเขียว และผลวัตถุดิบผิดสีแดง เวลา 00:17 ICT วันที่ 2026-09-16
+- ติด `CollectionFeedbackUI.cs` กับ World Space Canvas และเชื่อม `FeedbackText` เข้าช่องอ้างอิงสำเร็จ เวลา 00:38 ICT วันที่ 2026-09-16
+- เชื่อม Event ของ `IngredientCollector` เข้ากับ UI สำเร็จ: ผลถูกเรียก `ShowCorrect()` และผลผิดเรียก `ShowWrong()` เวลา 00:42 ICT วันที่ 2026-09-16
+- Wrong-flow UI test ผ่าน: วาง Chili แล้วป้ายแสดงข้อความเตือนสีแดงและ Console แสดงผลวัตถุดิบผิด
+- Correct-flow UI test ผ่าน: เริ่ม Play Mode ใหม่ วาง Krapow แล้วป้ายแสดงข้อความสำเร็จสีเขียวและ Console แสดงผลผ่าน
+- ตรวจไฟล์ Scene ยืนยันว่าไม่มีลิงก์ Prefab ของ UI ที่สูญหาย, Font Asset ภาษาไทยถูกอ้างอิง, `FeedbackText` ถูกเชื่อม และ Event ทั้งสองชี้ไปยังเมธอดที่ถูกต้อง
+- Phase M1-4 completed เวลา 00:48 ICT วันที่ 2026-09-16
 
 ---
 

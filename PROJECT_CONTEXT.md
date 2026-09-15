@@ -190,7 +190,9 @@ GameplayTest_M1
 Assets/Gameplay
 ├── Prefabs/Ingredients/Krapow.prefab
 ├── Prefabs/Zones/CollectionZone_Krapow.prefab
-└── Scripts/IngredientCollector.cs
+├── Scripts/IngredientCollector.cs
+├── Scripts/CollectionFeedbackUI.cs
+└── UI/Fonts/Sarabun-Regular SDF.asset
 ```
 
 สถานะปัจจุบัน:
@@ -200,6 +202,8 @@ Assets/Gameplay
 - `GardenArea_Blockout` และ `GardenPath_Blockout` สร้างแล้ว และทดสอบการเดินไปสวนผ่าน
 - `CollectionZone_Krapow.prefab` และ `IngredientCollector.cs` สร้างแล้ว
 - ทดสอบวาง Krapow แล้วระบบแสดงผลผ่าน และทดสอบวาง Chili แล้วระบบแจ้งว่าวัตถุดิบผิดชนิดสำเร็จ
+- เพิ่ม World Space UI ภาษาไทยใน `GameplayTest_M1` พร้อมข้อความเริ่มต้น ผลสำเร็จสีเขียว และคำเตือนสีแดง
+- `CollectionFeedbackUI.cs` เชื่อมกับ Event ของ `IngredientCollector` แล้ว และทดสอบ UI ทั้งกรณี Krapow และ Chili ผ่าน
 
 คำอธิบายสั้นสำหรับนำเสนออาจารย์:
 
