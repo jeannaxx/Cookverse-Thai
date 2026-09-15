@@ -116,6 +116,108 @@ Branch ที่รับผิดชอบ: `feature/gameplay-content-ui`
 - ทดสอบกรณีทำผิด เช่น หยิบผิด ลืมขั้นตอน ใส่ของผิดลำดับ หรืออาหารไหม้
 - ส่ง Prefab และระบบย่อยที่ทดสอบแล้วให้ฝั่ง Mac M5 นำไปรวม
 
+### วิธีทำงานของ Mac M1 และการส่งต่อให้ Mac M5
+
+Mac M1 ใช้ `Assets/Scenes/GameplayTest_M1.unity` เป็นฉากทดลอง โดยฉากนี้เป็นสำเนาที่เริ่มจาก `MainVR` จึงมี XR Rig และ Environment ล่าสุดสำหรับทดสอบ แต่ Mac M1 สามารถเพิ่ม แก้ หรือลองระบบ Gameplay ได้โดยไม่ต้องแก้ `MainVR.unity` พร้อมกับ Mac M5
+
+ชิ้นงานที่ต้องนำไปใช้จริงให้เก็บแยกไว้ใต้ `Assets/Gameplay` ตัวอย่างโครงสร้างคือ:
+
+```text
+Assets/Gameplay
+├── Prefabs
+│   ├── Ingredients
+│   ├── Equipment
+│   └── Zones
+├── Scripts
+└── UI
+```
+
+- `GameplayTest_M1` ใช้ประกอบและทดสอบระบบย่อย เช่น หยิบกะเพราแล้วนำไปวางใน Collection Zone
+- `Prefabs` เก็บแม่แบบวัตถุที่นำไปวางซ้ำหรือใช้ใน Scene อื่นได้
+- `Scripts` เก็บระบบและกฎการทำงานที่ผ่านการทดสอบ
+- `UI` เก็บหน้าจอหรือองค์ประกอบ UI ที่ M5 นำไปเชื่อมกับฉากหลัก
+- การแยกโฟลเดอร์ช่วยจัดงานให้หาและส่งต่อง่าย แต่ไม่ได้ป้องกัน Scene ถูกทับโดยอัตโนมัติ การป้องกันหลักคือไม่ให้ M1 และ M5 แก้ `MainVR.unity` พร้อมกัน
+
+ภายใน Hierarchy ของ `GameplayTest_M1` ให้แยกวัตถุตามหน้าที่ดังนี้:
+
+```text
+Environment
+├── Ground
+├── ThaiHouse
+├── GardenArea_Blockout
+└── GardenPath_Blockout
+
+GameplaySystems
+├── CollectionZone_Krapow
+├── IngredientManager
+├── ObjectiveManager
+└── ScoreManager
+```
+
+- `Environment` เก็บวัตถุและพื้นที่ที่มองเห็นในฉาก เช่น บ้าน สวน ทางเดิน และพื้น
+- `GameplaySystems` เป็น Empty GameObject สำหรับจัดกลุ่มจุดตรวจและระบบที่ควบคุม Gameplay จึงไม่จำเป็นต้องมี Mesh หรือปรากฏเป็นวัตถุในเกม
+- ตั้ง Transform ของ `GameplaySystems` เป็น Position `(0, 0, 0)`, Rotation `(0, 0, 0)` และ Scale `(1, 1, 1)` เพื่อให้วัตถุลูกใช้พิกัดตรงและย้ายระบบไป Scene อื่นได้ง่าย
+- Collection Zone และ Manager อยู่ใต้ `GameplaySystems` ส่วนสวนและทางเดินอยู่ใต้ `Environment`
+
+คำแปลชื่อที่ใช้ในงาน M1:
+
+| ชื่อใน Unity | ความหมายภาษาไทย |
+|---|---|
+| `GameplayTest_M1` | ฉากทดสอบระบบ Gameplay ของ Mac M1 |
+| `GameplaySystems` | กลุ่มสำหรับเก็บระบบการเล่นและจุดตรวจ |
+| `GardenArea_Blockout` | แปลงสวนแบบจำลองหยาบ |
+| `GardenPath_Blockout` | ทางเดินไปสวนแบบจำลองหยาบ |
+| `CollectionZone_Krapow` | จุดรับและตรวจจับกะเพรา |
+| `Krapow` | วัตถุดิบกะเพรา |
+
+### Flow ปัจจุบันสำหรับอธิบายอาจารย์
+
+Mac M1 ใช้ฉากแยกเพื่อทดลองระบบย่อยให้ทำงานครบก่อนส่งชิ้นงานที่ผ่านแล้วให้ Mac M5 นำไปเชื่อมในฉากหลัก:
+
+```text
+GameplayTest_M1
+→ ผู้เล่นเดินจากบ้านไปสวน
+→ ทดลองหยิบ Krapow
+→ นำ Krapow กลับไปยังครัว
+→ ทดลองวางใน Collection Zone
+→ IngredientCollector ตรวจว่าเป็นวัตถุดิบชนิดที่กำหนด
+→ ระบบแจ้งผลผ่านหรือแจ้งว่าเป็นวัตถุดิบผิดชนิด
+```
+
+ไฟล์ของระบบนี้จัดเก็บดังนี้:
+
+```text
+Assets/Gameplay
+├── Prefabs/Ingredients/Krapow.prefab
+├── Prefabs/Zones/CollectionZone_Krapow.prefab
+└── Scripts/IngredientCollector.cs
+```
+
+สถานะปัจจุบัน:
+
+- `GameplayTest_M1` สร้างแล้วและใช้ทดสอบโดยไม่แก้ `MainVR`
+- `Krapow.prefab` สร้างแล้ว และทดสอบ Grab/Drop กับพื้นผ่าน
+- `GardenArea_Blockout` และ `GardenPath_Blockout` สร้างแล้ว และทดสอบการเดินไปสวนผ่าน
+- `CollectionZone_Krapow.prefab` และ `IngredientCollector.cs` สร้างแล้ว
+- ทดสอบวาง Krapow แล้วระบบแสดงผลผ่าน และทดสอบวาง Chili แล้วระบบแจ้งว่าวัตถุดิบผิดชนิดสำเร็จ
+
+คำอธิบายสั้นสำหรับนำเสนออาจารย์:
+
+> ฝั่ง Mac M1 พัฒนาระบบย่อยใน GameplayTest_M1 โดยจำลองลำดับการเดินไปสวน หยิบกะเพรา และนำกลับมาวางใน Collection Zone ระบบจะตรวจชนิดวัตถุดิบและแจ้งผล จากนั้นจึงส่งเฉพาะ Prefab และ Script ที่ทดสอบผ่านให้ฝั่ง Mac M5 นำไปเชื่อมใน MainVR โดยไม่ใช้ฉากทดลองไปทับฉากหลัก
+
+ขั้นตอนส่งต่องานคือ:
+
+```text
+Mac M1 พัฒนาและทดสอบใน GameplayTest_M1
+→ แยกของที่ใช้จริงเป็น Prefab, Script และ UI ใน Assets/Gameplay
+→ Commit ลง feature/gameplay-content-ui
+→ Merge เข้า develop และทดสอบ
+→ Mac M5 ดึง develop
+→ นำเฉพาะ Prefab, Script และ UI ที่ผ่านแล้วไปวางหรือเชื่อมใน MainVR
+```
+
+ไม่ใช้ `GameplayTest_M1` ไปวางทับ `MainVR` ทั้งฉาก เพราะอาจทำให้งาน XR, Environment หรือการตั้งค่าในฉากหลักของ Mac M5 เกิด Conflict หรือสูญหายได้
+
 ### กติกาการทำงานร่วมกัน
 
 - ลำดับเริ่มงานรอบนี้คือ Mac M5 ทำ XR Foundation และมาตรฐาน Interaction ให้เสร็จก่อน จากนั้นรวมเข้า `develop` แล้ว Mac M1 จึงดึงข้อมูลล่าสุดจาก `develop` ไปทำ Gameplay Module, Prefab และ UI ต่อ

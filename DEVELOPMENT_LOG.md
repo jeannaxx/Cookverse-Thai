@@ -172,6 +172,95 @@ Environment
 
 ---
 
+## 15 September 2026 — Mac M1 gameplay session
+
+### Session plan
+
+| Phase | งาน | สถานะ |
+|---|---|---|
+| M1-1 | Sync งานจาก `develop`, เปิดโปรเจกต์ และเตรียม Gameplay Test Scene | Completed |
+| M1-2 | สร้าง Prefab วัตถุดิบแบบ Blockout และทดสอบ Grab/Drop | Completed |
+| M1-3 | สร้าง Collection Zone และตรวจวัตถุดิบที่นำมาวาง | Completed |
+| M1-4 | สร้าง Objective UI แบบหยาบและทดสอบระบบย่อย | Not started |
+
+### Phase M1-1 — Gameplay workspace setup
+
+- Start time: 20:37 ICT
+- End time: 23:43 ICT
+- Status: Completed
+- Branch: `feature/gameplay-content-ui`
+
+#### Tasks
+
+- รวม `develop` ล่าสุดเข้า branch ของ Mac M1
+- ยืนยันว่าได้รับ MainVR, Thai house blockout, Functional Zones และ XR Foundation จาก Mac M5
+- เตรียม Test Scene สำหรับพัฒนาระบบย่อยโดยไม่แก้ Main XR Scene พร้อมกัน
+- ตรวจ Console หลัง Unity โหลดไฟล์ครบ
+
+#### Result
+
+- สลับจาก `feature/xr-webxr-integration` มาที่ `feature/gameplay-content-ui` สำเร็จ
+- Fast-forward จาก `develop` ถึง merge commit `03d4c0d` สำเร็จโดยไม่มี Conflict เวลา 20:37 ICT
+- สร้างสำเนา MainVR สำหรับงาน M1 ที่ `Assets/Scenes/GameplayTest_M1.unity` สำเร็จ เวลา 21:04 ICT
+- Unity import และ compile สำเร็จ โดยสามารถเปิด Play Mode และทดสอบ Script ใน `GameplayTest_M1` ได้
+- Phase M1-1 completed เวลา 23:43 ICT
+
+### Phase M1-2 — Ingredient blockout prefab
+
+- Start time: 21:09 ICT
+- End time: 21:44 ICT
+- Status: Completed
+- Branch: `feature/gameplay-content-ui`
+
+#### Tasks
+
+- ใช้ `Krapow` ที่มีอยู่เป็นวัตถุดิบต้นแบบ
+- ตรวจ Rigidbody, Collider และ XR Grab Interactable
+- สร้าง Prefab ในโฟลเดอร์ Gameplay ของ Mac M1
+- ทดสอบ Grab, Drop และการชนพื้นใน `GameplayTest_M1`
+
+#### Result
+
+- ตรวจไฟล์ Scene แล้วพบว่า `Krapow` มี Rigidbody, Box Collider และ XR Grab Interactable ครบ
+- สร้าง `Assets/Gameplay/Prefabs/Ingredients/Krapow.prefab` สำเร็จ และตรวจยืนยันว่ามี Rigidbody, Box Collider และ XR Grab Interactable ครบ เวลา 21:29 ICT
+- ย้าย Krapow instance ขึ้นมาเหนือพื้นบ้านในพื้นที่ครัวและบันทึกตำแหน่งใน `GameplayTest_M1`
+- Play Mode test ผ่าน: หยิบ ปล่อย และตกชนพื้นบ้านได้โดยไม่ทะลุ เวลา 21:44 ICT
+- มือหรือวัตถุที่ถือสามารถผ่านผนังเมื่อขยับ Controller จำลองด้วย WASD โดยตรง; เก็บการปรับ Hand/Held-object collision ไว้ภายหลังและไม่กีดขวางระบบ Grab/Drop ขั้นพื้นฐาน
+- Phase M1-2 completed เวลา 21:44 ICT
+
+### Phase M1-3 — Krapow collection zone
+
+- Start time: 21:47 ICT
+- End time: 23:43 ICT
+- Status: Completed
+- Branch: `feature/gameplay-content-ui`
+
+#### Tasks
+
+- สร้าง Collection Zone แบบ Trigger ใน `GameplayTest_M1`
+- สร้าง Prefab ของ Collection Zone ใต้ `Assets/Gameplay`
+- เพิ่ม Script ตรวจว่า Krapow เข้ามาในพื้นที่
+- แสดงผลตรวจสอบแบบหยาบและทดสอบใน Play Mode
+
+#### Result
+
+- สร้างกลุ่ม `GameplaySystems` ที่ Transform ค่าเริ่มต้นและบันทึกใน Scene สำเร็จ เวลา 21:47 ICT
+- กำหนดโครงสร้าง Hierarchy ให้ `Environment` เก็บบ้าน สวน ทางเดิน และพื้น ส่วน `GameplaySystems` เก็บ Collection Zone และ Manager ต่าง ๆ
+- สร้าง `GardenArea_Blockout` ใต้ `Environment` ที่ Position `(-5, 0.05, -7)` และ Scale `(3, 0.2, 4)` พร้อม Box Collider แบบไม่เป็น Trigger เวลา 22:49 ICT
+- ย้าย Krapow instance ไปบนแปลงสวนที่ Position `(-5, 0.4, -7)` เวลา 22:52 ICT
+- สร้าง `GardenPath_Blockout` เชื่อมขอบบันไดกับสวนที่ Position `(-1.75, 0.03, -6.6)` และ Scale `(3.5, 0.06, 1.2)` พร้อม Box Collider แบบไม่เป็น Trigger เวลา 22:57 ICT
+- XR Locomotion test ผ่าน: เดินจากบันไดผ่าน GardenPath ไปถึง GardenArea ได้โดยไม่ติดขอบหรือตก เวลา 22:59 ICT
+- เพิ่ม Gameplay Flow และโครงสร้างไฟล์สำหรับใช้อธิบายอาจารย์ไว้ใน `PROJECT_CONTEXT.md` โดยแยกสถานะงานที่เสร็จแล้วกับงานที่กำลังทำ
+- สร้าง `CollectionZone_Krapow` ใต้ `GameplaySystems` ที่ Position `(-1.5, 1.25, 1.8)`, Scale `(1.2, 0.1, 1.2)` และเปิด Box Collider เป็น Trigger เวลา 23:06 ICT
+- สร้าง `Assets/Gameplay/Prefabs/Zones/CollectionZone_Krapow.prefab` สำเร็จและตรวจยืนยันว่า Box Collider ยังเป็น Trigger เวลา 23:09 ICT
+- สร้าง `Assets/Gameplay/Scripts/IngredientCollector.cs` สำหรับตรวจชื่อวัตถุดิบแบบ Rule-based โดยกำหนด Krapow เป็นค่าที่ถูกต้อง พร้อม Event สำหรับต่อ UI ภายหลัง เวลา 23:18 ICT
+- ติด `IngredientCollector` กับ CollectionZone instance และ Apply กลับเข้า `CollectionZone_Krapow.prefab` สำเร็จ โดย Expected Ingredient Name เป็น Krapow และ Accept Only Once เปิดอยู่ เวลา 23:26 ICT
+- Correct-flow test ผ่าน: ผู้เล่นหยิบ Krapow จากสวน นำกลับครัว และวางใน CollectionZone แล้ว Console แสดง `[IngredientCollector] Correct ingredient: Krapow` เวลา 23:37 ICT
+- Wrong-ingredient test ผ่าน: วาง Chili ใน CollectionZone แล้ว Console แสดง `[IngredientCollector] Wrong ingredient: Chili. Expected: Krapow` เวลา 23:43 ICT
+- Phase M1-3 completed เวลา 23:43 ICT
+
+---
+
 ## Daily entry template
 
 ### Date
