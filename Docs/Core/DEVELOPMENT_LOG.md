@@ -290,6 +290,39 @@ Environment
 
 ---
 
+### 22 กันยายน 2026 — เตรียมเนื้อหา M1 และแผนทดสอบ Quest 3
+
+#### Completed
+
+- จัดทำ `Docs/Planning/Gameplay/M1_GAMEPLAY_CONTENT_V1.md` สำหรับเมนูผัดกะเพราไก่ โดยกำหนดวัตถุดิบ สถานะ `ingredientId`, `stepId`, Objective UI, บทพูด NPC, Recipe Rubric และ Action Log Contract v1
+- กำหนดลำดับงาน M1-5 ถึง M1-8 ให้ต่อยอดจาก Krapow Collection Correct/Wrong flow เดิมโดยไม่รื้อระบบที่ทดสอบผ่านแล้ว
+- จัดทำ `Docs/Planning/VR/QUEST_3_TEST_PLAN_2026-09-25.md` สำหรับทดสอบ M5 Environment/XR Foundation บน Quest 3 วันศุกร์ที่ 25 กันยายน 2026
+
+#### Tested
+
+- ตรวจเนื้อหาให้ใช้ชื่อ `Krapow` เดิมเป็นช่วงเปลี่ยนผ่านไปยัง `ingredientId = krapow_leaf`
+- ยังไม่ได้ทดสอบ Gameplay Content ชุดใหม่นี้ใน Play Mode และยังไม่ได้ Build Quest 3
+
+#### Problems / decisions
+
+- สูตร จำนวนวัตถุดิบ และ Recipe Rubric เป็น v1 สำหรับต้นแบบ ต้องให้อาจารย์ยืนยันก่อนล็อก
+- การทดสอบ Quest 3 รอบแรกเน้น Controller, Environment, Teleport และ Collider ยังไม่ใช้ตัดสิน Hand Tracking, WebXR หรือ Gameplay Loop
+
+#### Next work
+
+- เริ่ม M1-5: ข้อมูลกลางและ Objective Manager ใน `GameplayTest_M1`
+- เตรียม Android Build และทดสอบ Quest 3 ตามเช็กลิสต์วันที่ 25 กันยายน 2026
+
+### 26 กันยายน 2026 — เลื่อนการทดสอบ Quest 3
+
+#### Problems / decisions
+
+- เลื่อนการทดสอบ Quest 3 เนื่องจากยังไม่สามารถเดินทางไปใช้อุปกรณ์ได้
+- ยังไม่มีผลทดสอบ APK, Controller, Hand Tracking หรือ WebXR จากอุปกรณ์จริง
+- เก็บเช็กลิสต์เดิมไว้และรอกำหนดวันทดสอบใหม่ ห้ามรายงานว่าส่วนอุปกรณ์จริงผ่านแล้ว
+
+---
+
 ## Daily entry template
 
 ### Date

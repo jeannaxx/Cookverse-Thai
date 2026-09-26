@@ -17,9 +17,14 @@
 - [`Planning/Environment/SPACE_LAYOUT_GARDEN_PLAN.md`](Planning/Environment/SPACE_LAYOUT_GARDEN_PLAN.md) — รายละเอียดผังบ้าน ครัว สวน และการแบ่งงาน
 - [`Planning/Environment/Cookverse_TopDown_Layout_Garden_v2.png`](Planning/Environment/Cookverse_TopDown_Layout_Garden_v2.png) — ภาพผังมองจากด้านบนฉบับล่าสุด
 
+## Planning / Gameplay
+
+- [`Planning/Gameplay/M1_GAMEPLAY_CONTENT_V1.md`](Planning/Gameplay/M1_GAMEPLAY_CONTENT_V1.md) — เนื้อหาเมนูผัดกะเพราไก่ ข้อมูลกลาง Objective บทพูด NPC และเกณฑ์คะแนนสำหรับทำ M1 ต่อ
+
 ## Planning / VR
 
 - [`Planning/VR/Quest_3_Setup_and_First_Test.md`](Planning/VR/Quest_3_Setup_and_First_Test.md) — ขั้นตอนตั้งค่าและทดสอบ Meta Quest 3
+- [`Planning/VR/QUEST_3_TEST_PLAN_2026-09-25.md`](Planning/VR/QUEST_3_TEST_PLAN_2026-09-25.md) — เช็กลิสต์ทดสอบ M5 บน Quest 3 วันศุกร์ที่ 25 กันยายน 2026
 
 ## หลักการอัปเดต
 
