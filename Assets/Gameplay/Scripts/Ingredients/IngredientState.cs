@@ -1,16 +1,12 @@
-using UnityEngine;
-
-public class IngredientState : MonoBehaviour
+public enum IngredientState
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    Raw,
+    Collected,
+    Washed,
+    Cut,
+    AddedToPan,
+    Cooking,
+    Cooked,
+    Burned,
+    Served
 }
