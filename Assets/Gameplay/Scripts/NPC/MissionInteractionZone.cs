@@ -86,7 +86,7 @@ public class MissionInteractionZone : MonoBehaviour
         if (!playerInside)
         {
             Debug.LogWarning(
-                "[MissionInteractionZone] Player is not inside the NPC zone.",
+                "[พื้นที่ NPC] ผู้เล่นยังไม่ได้อยู่ในพื้นที่สนทนากับป้าแสง",
                 this);
             return;
         }
@@ -94,7 +94,7 @@ public class MissionInteractionZone : MonoBehaviour
         if (missionGiver == null)
         {
             Debug.LogError(
-                "[MissionInteractionZone] MissionGiver is not assigned.",
+                "[พื้นที่ NPC] ยังไม่ได้เชื่อมผู้ให้ภารกิจ",
                 this);
             return;
         }
@@ -114,7 +114,7 @@ public class MissionInteractionZone : MonoBehaviour
         if (playerInside)
         {
             Debug.Log(
-                "[MissionInteractionZone] Player entered the NPC zone.",
+                "[พื้นที่ NPC] ผู้เล่นเข้าสู่พื้นที่สนทนากับป้าแสง",
                 this);
 
             onPlayerEntered?.Invoke();
@@ -128,7 +128,7 @@ public class MissionInteractionZone : MonoBehaviour
         }
 
         Debug.Log(
-            "[MissionInteractionZone] Player exited the NPC zone.",
+            "[พื้นที่ NPC] ผู้เล่นออกจากพื้นที่สนทนากับป้าแสง",
             this);
 
         onPlayerExited?.Invoke();

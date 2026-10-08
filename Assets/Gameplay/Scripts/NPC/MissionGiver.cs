@@ -19,13 +19,13 @@ public class MissionGiver : MonoBehaviour
         if (missionManager == null)
         {
             Debug.LogError(
-                "[MissionGiver] MissionManager is not assigned.",
+                "[ผู้ให้ภารกิจ] ยังไม่ได้เชื่อมระบบจัดการภารกิจ",
                 this);
             return;
         }
 
         Debug.Log(
-            $"[MissionGiver] {npcName} received a mission request.",
+            $"[ผู้ให้ภารกิจ] {npcName} ได้รับคำขอรับภารกิจ",
             this);
 
         missionManager.AcceptMission();

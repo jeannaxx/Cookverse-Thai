@@ -19,20 +19,20 @@ public class MissionManager : MonoBehaviour
         if (objectiveManager == null)
         {
             Debug.LogError(
-                "[MissionManager] ObjectiveManager is not assigned.",
+                "[ภารกิจ] ยังไม่ได้เชื่อมระบบจัดการเป้าหมาย",
                 this);
             return;
         }
 
         if (objectiveManager.TryAcceptMission())
         {
-            Debug.Log("[MissionManager] Mission accepted.", this);
+            Debug.Log("[ภารกิจ] รับภารกิจสำเร็จ", this);
             onMissionAccepted?.Invoke();
             return;
         }
 
         Debug.LogWarning(
-            "[MissionManager] Mission accept request was rejected.",
+            "[ภารกิจ] ไม่สามารถรับภารกิจนี้ได้",
             this);
         onMissionAcceptRejected?.Invoke();
     }
@@ -42,14 +42,14 @@ public class MissionManager : MonoBehaviour
         if (objectiveManager == null)
         {
             Debug.LogError(
-                "[MissionManager] ObjectiveManager is not assigned.",
+                "[ภารกิจ] ยังไม่ได้เชื่อมระบบจัดการเป้าหมาย",
                 this);
             return;
         }
 
         objectiveManager.ResetObjectives();
 
-        Debug.Log("[MissionManager] Mission reset.", this);
+        Debug.Log("[ภารกิจ] รีเซ็ตภารกิจแล้ว", this);
         onMissionReset?.Invoke();
     }
 
