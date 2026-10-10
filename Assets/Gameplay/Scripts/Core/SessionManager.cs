@@ -15,12 +15,9 @@ public class SessionManager : MonoBehaviour
 
     public string SessionId => sessionId;
 
-    private void Awake()
+    private void Start()
     {
-        if (string.IsNullOrEmpty(sessionId))
-        {
-            CreateSessionId();
-        }
+        StartNewSession();
     }
 
     public void StartNewSession()
@@ -30,16 +27,14 @@ public class SessionManager : MonoBehaviour
         if (missionManager == null)
         {
             Debug.LogError(
-                "[SessionManager] MissionManager is not assigned.",
+                "[รอบการเล่น] ยังไม่ได้เชื่อมระบบจัดการภารกิจ",
                 this);
             return;
         }
 
         missionManager.ResetMission();
 
-        Debug.Log(
-            $"[SessionManager] New session started: {sessionId}",
-            this);
+        Debug.Log($"[รอบการเล่น] เริ่มรอบใหม่: {sessionId}", this);
 
         onSessionStarted?.Invoke();
     }

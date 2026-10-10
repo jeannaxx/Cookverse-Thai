@@ -25,7 +25,10 @@ public class MissionGiver : MonoBehaviour
         }
 
         Debug.Log(
-            $"[ผู้ให้ภารกิจ] {npcName} ได้รับคำขอรับภารกิจ",
+            $"[ผู้ให้ภารกิจ] {npcName}: สวัสดีจ้ะ " +
+            "วันนี้ช่วยทำผัดกะเพราให้หน่อย " +
+            "ไปเก็บใบกะเพราและพริกจากสวน " +
+            "แล้วนำมาวางบนโต๊ะเตรียมอาหารนะ",
             this);
 
         missionManager.AcceptMission();

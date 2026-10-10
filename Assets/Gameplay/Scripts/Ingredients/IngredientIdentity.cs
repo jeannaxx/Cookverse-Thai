@@ -4,6 +4,7 @@ using UnityEngine;
 public class IngredientIdentity : MonoBehaviour
 {
     public const string KrapowLeafId = "krapow_leaf";
+    public const string ChiliId = "chili";
 
     [Header("Ingredient Information")]
     [SerializeField] private string ingredientId = KrapowLeafId;
@@ -15,6 +16,15 @@ public class IngredientIdentity : MonoBehaviour
     [SerializeField] private IngredientState currentState =
         IngredientState.Raw;
 
+    private Transform initialParent;
+    private Vector3 initialLocalPosition;
+    private Quaternion initialLocalRotation;
+    private Vector3 initialLocalScale;
+    private Rigidbody cachedRigidbody;
+    private bool initialUseGravity;
+    private bool initialIsKinematic;
+    private bool initialPoseCaptured;
+
     public string IngredientId => ingredientId;
     public string InstanceId
     {
@@ -25,11 +35,35 @@ public class IngredientIdentity : MonoBehaviour
         }
     }
     public IngredientState CurrentState => currentState;
+    public string DisplayNameThai => displayNameThai;
 
     private void Awake()
     {
+        CaptureInitialPoseIfNeeded();
         CreateInstanceIdIfNeeded();
         ApplyLegacyCompatibility();
+    }
+
+    private void CaptureInitialPoseIfNeeded()
+    {
+        if (initialPoseCaptured)
+        {
+            return;
+        }
+
+        initialParent = transform.parent;
+        initialLocalPosition = transform.localPosition;
+        initialLocalRotation = transform.localRotation;
+        initialLocalScale = transform.localScale;
+        cachedRigidbody = GetComponent<Rigidbody>();
+
+        if (cachedRigidbody != null)
+        {
+            initialUseGravity = cachedRigidbody.useGravity;
+            initialIsKinematic = cachedRigidbody.isKinematic;
+        }
+
+        initialPoseCaptured = true;
     }
 
     private void CreateInstanceIdIfNeeded()
@@ -46,7 +80,7 @@ public class IngredientIdentity : MonoBehaviour
     {
         if (string.Equals(
                 ingredientId,
-                legacyPrefabName,
+                "Krapow",
                 StringComparison.OrdinalIgnoreCase))
         {
             ingredientId = KrapowLeafId;
@@ -112,10 +146,28 @@ public class IngredientIdentity : MonoBehaviour
 
     public void ResetIngredient()
     {
+        CaptureInitialPoseIfNeeded();
         currentState = IngredientState.Raw;
 
+        transform.SetParent(initialParent, false);
+        transform.localPosition = initialLocalPosition;
+        transform.localRotation = initialLocalRotation;
+        transform.localScale = initialLocalScale;
+
+        if (cachedRigidbody != null)
+        {
+            cachedRigidbody.isKinematic = initialIsKinematic;
+            cachedRigidbody.useGravity = initialUseGravity;
+            cachedRigidbody.linearVelocity = Vector3.zero;
+            cachedRigidbody.angularVelocity = Vector3.zero;
+            cachedRigidbody.position = transform.position;
+            cachedRigidbody.rotation = transform.rotation;
+            cachedRigidbody.Sleep();
+        }
+
         Debug.Log(
-            $"[วัตถุดิบ] {displayNameThai}: ยังไม่เก็บ",
+            $"[วัตถุดิบ] {displayNameThai}: ยังไม่เก็บ " +
+            "และกลับตำแหน่งเริ่มต้นแล้ว",
             this);
     }
 
