@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 public class IngredientIdentity : MonoBehaviour
 {
@@ -24,6 +26,10 @@ public class IngredientIdentity : MonoBehaviour
     private bool initialUseGravity;
     private bool initialIsKinematic;
     private bool initialPoseCaptured;
+    private Coroutine resetRoutine;
+    private XRGrabInteractable resettingGrab;
+    private bool originalThrowOnDetach;
+    public bool IsResetting { get; private set; }
 
     public string IngredientId => ingredientId;
     public string InstanceId
@@ -147,7 +153,56 @@ public class IngredientIdentity : MonoBehaviour
     public void ResetIngredient()
     {
         CaptureInitialPoseIfNeeded();
+        if (resetRoutine != null) StopCoroutine(resetRoutine);
+        if (!IsResetting)
+        {
+            resettingGrab = GetComponent<XRGrabInteractable>();
+            if (resettingGrab != null) originalThrowOnDetach = resettingGrab.throwOnDetach;
+        }
+        IsResetting = true;
+        if (resettingGrab != null)
+        {
+            // XRI applies throw velocity in LateUpdate. Suppress it through the
+            // end of this frame so a reset cannot launch the returned ingredient.
+            resettingGrab.throwOnDetach = false;
+            if (resettingGrab.isSelected && resettingGrab.interactionManager != null)
+                resettingGrab.interactionManager.CancelInteractableSelection(resettingGrab);
+        }
         currentState = IngredientState.Raw;
+
+        RestoreInitialPose();
+        if (Application.isPlaying && isActiveAndEnabled)
+            resetRoutine = StartCoroutine(FinishReset());
+        else FinishResetImmediately();
+
+        Debug.Log(
+            $"[วัตถุดิบ] {displayNameThai}: ยังไม่เก็บ " +
+            "และกลับตำแหน่งเริ่มต้นแล้ว",
+            this);
+    }
+
+    private IEnumerator FinishReset()
+    {
+        yield return new WaitForEndOfFrame();
+        RestoreInitialPose();
+        FinishResetImmediately();
+    }
+
+    private void FinishResetImmediately()
+    {
+        if (resettingGrab != null) resettingGrab.throwOnDetach = originalThrowOnDetach;
+        resetRoutine = null;
+        IsResetting = false;
+    }
+
+    private void OnDisable()
+    {
+        if (resetRoutine != null) StopCoroutine(resetRoutine);
+        if (IsResetting) FinishResetImmediately();
+    }
+
+    private void RestoreInitialPose()
+    {
 
         transform.SetParent(initialParent, false);
         transform.localPosition = initialLocalPosition;
@@ -158,17 +213,16 @@ public class IngredientIdentity : MonoBehaviour
         {
             cachedRigidbody.isKinematic = initialIsKinematic;
             cachedRigidbody.useGravity = initialUseGravity;
-            cachedRigidbody.linearVelocity = Vector3.zero;
-            cachedRigidbody.angularVelocity = Vector3.zero;
+            if (!cachedRigidbody.isKinematic)
+            {
+                cachedRigidbody.linearVelocity = Vector3.zero;
+                cachedRigidbody.angularVelocity = Vector3.zero;
+            }
             cachedRigidbody.position = transform.position;
             cachedRigidbody.rotation = transform.rotation;
             cachedRigidbody.Sleep();
         }
 
-        Debug.Log(
-            $"[วัตถุดิบ] {displayNameThai}: ยังไม่เก็บ " +
-            "และกลับตำแหน่งเริ่มต้นแล้ว",
-            this);
     }
 
     private string GetStateNameThai(IngredientState state)

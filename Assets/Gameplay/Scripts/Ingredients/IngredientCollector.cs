@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 [RequireComponent(typeof(Collider))]
 public class IngredientCollector : MonoBehaviour
@@ -8,7 +9,8 @@ public class IngredientCollector : MonoBehaviour
     [SerializeField] private ObjectiveManager objectiveManager;
     [SerializeField] private CollectionFeedbackUI feedbackUI;
 
-    private readonly HashSet<IngredientIdentity> ingredientsInside = new();
+    private readonly Dictionary<Collider, IngredientIdentity> collidersInside = new();
+    private readonly HashSet<IngredientIdentity> attempted = new();
 
     public void Configure(
         ObjectiveManager objective,
@@ -26,17 +28,24 @@ public class IngredientCollector : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        IngredientIdentity ingredient = FindIngredient(other);
+        var ingredient = FindIngredient(other);
+        if (ingredient != null) collidersInside[other] = ingredient;
+    }
 
-        if (ingredient == null)
+    private void OnTriggerStay(Collider other)
+    {
+        var ingredient = FindIngredient(other);
+        if (ingredient == null || ingredient.IsResetting) return;
+        collidersInside[other] = ingredient;
+        var grab = ingredient.GetComponent<XRGrabInteractable>();
+        if (grab != null && grab.isSelected)
         {
+            attempted.Remove(ingredient);
             return;
         }
-
-        if (!ingredientsInside.Add(ingredient))
-        {
-            return;
-        }
+        // Evaluate on a physics overlap after release, not in selectExited:
+        // release outside the zone must never be counted from a stale overlap.
+        if (!attempted.Add(ingredient)) return;
 
         if (objectiveManager == null)
         {
@@ -60,12 +69,10 @@ public class IngredientCollector : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        IngredientIdentity ingredient = FindIngredient(other);
-
-        if (ingredient != null)
-        {
-            ingredientsInside.Remove(ingredient);
-        }
+        if (!collidersInside.TryGetValue(other, out var ingredient)) return;
+        collidersInside.Remove(other);
+        // A multi-collider item is still inside until its last collider leaves.
+        if (!collidersInside.ContainsValue(ingredient)) attempted.Remove(ingredient);
     }
 
     private IngredientIdentity FindIngredient(Collider other)
@@ -103,6 +110,9 @@ public class IngredientCollector : MonoBehaviour
 
     public void ResetCollector()
     {
-        ingredientsInside.Clear();
+        collidersInside.Clear();
+        attempted.Clear();
     }
+
+    private void OnDisable() => ResetCollector();
 }

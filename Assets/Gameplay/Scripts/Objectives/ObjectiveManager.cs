@@ -29,7 +29,7 @@ public class ObjectiveManager : MonoBehaviour
     [Header("Garden Collection")]
     [SerializeField] private int requiredKrapowCount = 1;
     [SerializeField] private int collectedKrapowCount;
-    [SerializeField] private int requiredChiliCount = 1;
+    [SerializeField] private int requiredChiliCount = 3;
     [SerializeField] private int collectedChiliCount;
 
     [Header("Events")]
@@ -93,6 +93,12 @@ public class ObjectiveManager : MonoBehaviour
         string instanceId,
         IngredientIdentity ingredient)
     {
+        if (missionAccepted && !string.IsNullOrWhiteSpace(instanceId) && collectedInstanceIds.Contains(instanceId))
+        {
+            Debug.LogWarning("[เป้าหมาย] วัตถุดิบชิ้นนี้ถูกนับแล้ว จึงไม่นับซ้ำ", this);
+            return IngredientCollectionResult.Duplicate;
+        }
+
         if (!missionAccepted || currentStepId != CollectGardenStepId)
         {
             Debug.LogWarning(
@@ -229,7 +235,7 @@ public class ObjectiveManager : MonoBehaviour
         }
 
         Debug.Log(
-            "[เป้าหมาย] รีเซ็ตแล้ว: ใบกะเพรา 0/1 กำ พริก 0/1 ชิ้น " +
+            $"[เป้าหมาย] รีเซ็ตแล้ว: ใบกะเพรา 0/{requiredKrapowCount} กำ พริก 0/{requiredChiliCount} ชิ้น " +
             "วัตถุดิบกลับตำแหน่งเริ่มต้น " +
             "และกลับไปที่ขั้นรับภารกิจ",
             this);
