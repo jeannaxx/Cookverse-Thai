@@ -166,7 +166,7 @@ public class IngredientIdentity : MonoBehaviour
             // end of this frame so a reset cannot launch the returned ingredient.
             resettingGrab.throwOnDetach = false;
             if (resettingGrab.isSelected && resettingGrab.interactionManager != null)
-                resettingGrab.interactionManager.CancelInteractableSelection(resettingGrab);
+                resettingGrab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)resettingGrab);
         }
         currentState = IngredientState.Raw;
 
