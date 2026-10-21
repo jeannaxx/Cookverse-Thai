@@ -1,34 +1,30 @@
-# Cookverse Thai — Document Index
+# Cookverse Thai — สารบัญเอกสาร
 
-เอกสารของโปรเจกต์แบ่งตามหน้าที่เพื่อไม่ให้แผน สถานะจริง และคู่มือปะปนกัน
+อัปเดต: 22 ตุลาคม 2026
 
-## Core
+## Core — สถานะและข้อตกลง
 
-- [`Core/PROJECT_CONTEXT.md`](Core/PROJECT_CONTEXT.md) — ขอบเขต ข้อตกลง และสถานะอ้างอิงล่าสุดของโปรเจกต์
-- [`Core/DEVELOPMENT_LOG.md`](Core/DEVELOPMENT_LOG.md) — บันทึกสิ่งที่ลงมือทำและทดสอบจริงตามวัน
+| เอกสาร | ใช้ทำอะไร |
+|---|---|
+| [`Core/PROJECT_CONTEXT.md`](Core/PROJECT_CONTEXT.md) | **อ่านก่อน** ขอบเขต ข้อตกลง วิธีทำงาน และสถานะล่าสุด |
+| [`Core/DEVELOPMENT_LOG.md`](Core/DEVELOPMENT_LOG.md) | บันทึกงานที่ทำและทดสอบจริงตามวัน |
 
-## Planning / Schedule
+## Planning — แผนและสเปก
 
-- [`Planning/Schedule/M1_M5_Daily_Plan_Sep-Nov_2026.md`](Planning/Schedule/M1_M5_Daily_Plan_Sep-Nov_2026.md) — แผนรายวันและการแบ่งงาน M1/M5
-- [`Planning/Schedule/M1_M5_Daily_Plan_Sep-Nov_2026.html`](Planning/Schedule/M1_M5_Daily_Plan_Sep-Nov_2026.html) — ฉบับอ่านและพิมพ์ของแผนรายวัน ไม่ควรแก้ด้วยมือ
+| เอกสาร | ใช้ทำอะไร |
+|---|---|
+| [`Planning/Schedule/PLAN_Oct-Nov_2026.md`](Planning/Schedule/PLAN_Oct-Nov_2026.md) | แผนงาน 22 ต.ค.–30 พ.ย. และการนับความคืบหน้า |
+| [`Planning/Gameplay/GAMEPLAY_CONTENT_V1.md`](Planning/Gameplay/GAMEPLAY_CONTENT_V1.md) | สเปกเมนูผัดกะเพราไก่: วัตถุดิบ ขั้นภารกิจ เตาแก๊ส บทพูด Rubric และ Action Log |
+| [`Planning/Environment/ENVIRONMENT_LAYOUT.md`](Planning/Environment/ENVIRONMENT_LAYOUT.md) | ผังบ้าน ครัว สวน ขนาด และ Hierarchy ใน `MainVR` |
+| [`Planning/VR/QUEST_3_SETUP.md`](Planning/VR/QUEST_3_SETUP.md) | วิธีตั้งค่าและ Build APK ลง Quest 3 |
+| [`Planning/VR/QUEST_3_TEST_2026-10-27.md`](Planning/VR/QUEST_3_TEST_2026-10-27.md) | เช็กลิสต์ทดสอบแว่น 27 ต.ค. |
 
-## Planning / Environment
-
-- [`Planning/Environment/SPACE_LAYOUT_GARDEN_PLAN.md`](Planning/Environment/SPACE_LAYOUT_GARDEN_PLAN.md) — รายละเอียดผังบ้าน ครัว สวน และการแบ่งงาน
-- [`Planning/Environment/Cookverse_TopDown_Layout_Garden_v2.png`](Planning/Environment/Cookverse_TopDown_Layout_Garden_v2.png) — ภาพผังมองจากด้านบนฉบับล่าสุด
-
-## Planning / Gameplay
-
-- [`Planning/Gameplay/M1_GAMEPLAY_CONTENT_V1.md`](Planning/Gameplay/M1_GAMEPLAY_CONTENT_V1.md) — เนื้อหาเมนูผัดกะเพราไก่ ข้อมูลกลาง Objective บทพูด NPC และเกณฑ์คะแนนสำหรับทำ M1 ต่อ
-
-## Planning / VR
-
-- [`Planning/VR/Quest_3_Setup_and_First_Test.md`](Planning/VR/Quest_3_Setup_and_First_Test.md) — ขั้นตอนตั้งค่าและทดสอบ Meta Quest 3
-- [`Planning/VR/QUEST_3_TEST_PLAN_2026-09-25.md`](Planning/VR/QUEST_3_TEST_PLAN_2026-09-25.md) — เช็กลิสต์ทดสอบ M5 บน Quest 3 วันศุกร์ที่ 25 กันยายน 2026
+ภาพผังอยู่ใน `Planning/Environment/` ได้แก่ `Cookverse_Floor_Plan_Illustrated_v5.png` (บ้านและสวน) และ `Cookverse_House_8x6_Layout_Hierarchy_v1.png` (ครัว 3D)
 
 ## หลักการอัปเดต
 
-- งานที่วางแผนไว้ให้อัปเดตใน `Planning`
-- งานที่ทำและทดสอบผ่านจริงให้อัปเดตใน `Core/DEVELOPMENT_LOG.md`
-- การตัดสินใจหรือขอบเขตล่าสุดให้อัปเดตใน `Core/PROJECT_CONTEXT.md`
-- ภาพผังเวอร์ชันใหม่ให้ใช้ชื่อ `v3`, `v4` ต่อไปโดยไม่เขียนทับภาพเดิม
+- แผนงานเขียนใน `Planning` สิ่งที่ทำและทดสอบจริงเขียนใน `DEVELOPMENT_LOG.md`
+- การตัดสินใจหรือขอบเขตที่เปลี่ยนให้อัปเดต `PROJECT_CONTEXT.md`
+- รอบทดสอบแว่นใหม่ให้สร้างไฟล์ `QUEST_3_TEST_YYYY-MM-DD.md` ใหม่ ไม่แก้ทับไฟล์เดิม
+- ภาพผังเวอร์ชันใหม่ใช้เลขเวอร์ชันถัดไป และลบเวอร์ชันเก่าที่ไม่ใช้แล้ว (ดูย้อนหลังได้ใน Git)
+- เอกสารที่ล้าสมัยให้ลบออก ไม่ต้องเก็บสำเนาไว้ เพราะ Git เก็บประวัติให้แล้ว

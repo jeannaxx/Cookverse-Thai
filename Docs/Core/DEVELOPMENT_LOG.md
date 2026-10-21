@@ -1,6 +1,14 @@
-# SiamCulinaryXR — Daily Development Log
+# Cookverse Thai — Daily Development Log
 
-ไฟล์นี้ใช้บันทึกว่างานในแต่ละวันทำอะไรไปแล้ว กำลังทดสอบอะไร และควรทำอะไรต่อ
+ไฟล์นี้ใช้บันทึกว่างานในแต่ละวันทำอะไรไปแล้ว ทดสอบอะไร และควรทำอะไรต่อ
+
+กติกา:
+
+- บันทึกเฉพาะสิ่งที่ทำและทดสอบจริง แผนงานให้เขียนใน `Docs/Planning`
+- ระบุเสมอว่าทดสอบบน **Simulator**, **แว่นจริง (APK)** หรือ **WebXR**
+- ใช้แบบฟอร์มท้ายไฟล์ และเพิ่มรายการใหม่ไว้ก่อนแบบฟอร์ม
+
+> หมายเหตุ: บันทึกช่วงวันที่ 7 ก.ย.–26 ก.ย. ใช้คำว่า Mac M1 / Mac M5 ตามการแบ่งงานสองเครื่องในตอนนั้น ตั้งแต่ ต.ค. ผู้พัฒนาคนเดียวทำทั้งสองฝั่ง
 
 ## 7 September 2026
 
@@ -323,9 +331,114 @@ Environment
 
 ---
 
+> บันทึกช่วง 19 ก.ย.–17 ต.ค. ด้านล่างเขียนย้อนหลังเมื่อ 22 ต.ค. 2026 จากประวัติ commit และไฟล์ในโปรเจกต์ ผลการทดสอบที่ไม่มีหลักฐานในไฟล์จะระบุว่า "ยังไม่มีบันทึกผล"
+
+### 19 ก.ย.–1 ต.ค. 2026 — สร้างบ้าน ครัว และสวนใน `MainVR`
+
+Branch: `feature/xr-webxr-integration` (merge เข้า `develop` แล้ว)
+
+#### Completed
+
+- `559ff20` (19 ก.ย.) รีเซ็ต `MainVR` เพื่อเริ่มสร้างฉากใหม่ตามแปลนบ้าน 8 × 6 เมตร
+- `9e65fd3`, `66885b7`, `6e3c237` (21–22 ก.ย.) สร้างโครงบ้านเรือนไทยยกพื้น เสา บันได ราว หลังคา และสวนวัตถุดิบ
+- `dc678cf`, `d665cb4`, `58a4f8a` (27–29 ก.ย.) จัดครัวและโซนการใช้งาน: `Ingredient_Zone`, `Washing_Zone`, `Preparation_Zone`, `Cooking_Zone`, `Plating_Zone`, `MissionComplete_Zone`
+- `2430b47`, `72db63c` (1 ต.ค.) เก็บรายละเอียดบ้านและสวน วางตำแหน่ง `NPC_Area`, `PlayerSpawn`, `GasStove`, `Fridge`, `Sink`, `CuttingBoard`, `PlatingTable` และของตกแต่งครัวแบบ Blockout
+- จัดทำแผนครัวฉบับ 1 ต.ค. (รวมเข้า `Docs/Planning/Environment/ENVIRONMENT_LAYOUT.md` แล้ว)
+
+#### Tested
+
+- ยังไม่มีบันทึกผลการเดินทดสอบฉากใหม่ใน Simulator และยังไม่ได้ทดสอบบนแว่นจริง
+
+#### Problems / decisions
+
+- ตัดห้องนอนแบบห้องปิดออก ใช้พื้นที่เป็นมุมนั่งเล่นและจุดรับภารกิจ
+- ครัวรูปตัว L และมีโต๊ะเตรียมกลางครัว เว้นทางเดินหลัก 1.2–1.5 เมตร
+- พบไฟล์ `Assets/MainVR.unity` ซ้ำกับ `Assets/Scenes/MainVR.unity` ต้องตรวจก่อนลบ
+
+### 1–2 ต.ค. 2026 — เริ่มระบบภารกิจใหม่
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- `c11774f` ลบต้นแบบเก็บกะเพราชุดแรก (Krapow/CollectionZone/CollectionFeedbackUI เดิม) เพื่อเขียนใหม่บนโครงข้อมูลกลาง
+- `ec88ac7` สร้างโครงระบบภารกิจ: `SessionManager`, `MissionManager`, `ObjectiveManager`, `MissionGiver`, `IngredientState`, `IngredientIdentity`
+
+### 8–9 ต.ค. 2026 — NPC และการนับกะเพรา
+
+#### Completed
+
+- `2829e36` เพิ่ม `MissionInteractionZone` ผู้เล่นเดินเข้าโซนของป้าแสงแล้วรับภารกิจได้
+- `8244e95` `ObjectiveManager` นับใบกะเพราด้วย `ingredientId = krapow_leaf` และ Instance ID กันการนับชิ้นเดิมซ้ำ ยังรองรับชื่อเดิม `Krapow`
+- `bf71f63` เปลี่ยนข้อความ Console ของระบบภารกิจเป็นภาษาไทย
+
+### 11 ต.ค. 2026 — จุดรับวัตถุดิบและ UI
+
+#### Completed
+
+- `be228fc` สร้าง Prefab `Krapow`, `Chili`, `CollectionZone_Krapow` (ย้ายไป `Prefabs/Stations`), `CollectionFeedbackUI`, `MissionChecklistUI`
+- `IngredientCollector` ตรวจของหลังผู้เล่นปล่อยมือในจุดรับเท่านั้น ของที่ปล่อยนอกจุดรับไม่ถูกนับ
+- ผลการวาง: ถูก / ผิดชนิด / ซ้ำ / ผิดขั้น / ข้อมูลไม่ครบ แสดงบน UI ภาษาไทย
+- เครื่องมือ Editor `Tools > Cookverse Thai > M1 > Apply Remaining Gameplay Setup` สำหรับตั้งค่าฉากทดลอง
+
+### 16 ต.ค. 2026 — มือ VR ที่ทำเอง
+
+#### Completed
+
+- `6fd4de5` นำเข้าโมเดลมือไว้ที่ `Assets/Gameplay/Art/Hands` สร้าง Prefab มือซ้าย–ขวา และเชื่อมกับ XR Hands ผ่าน `M1CustomHandVisual`
+- Reset ภารกิจคืนตำแหน่ง ฟิสิกส์ และสถานะวัตถุดิบครบ รวมถึงปล่อยของออกจากมือ
+
+#### Tested
+
+- ตรวจท่าอ้างอิงกระดูกข้างละ 22 จุดผ่าน และเห็นมือทั้งสองข้างพร้อมการเปลี่ยนท่าใน **Simulator**
+- ยังไม่ยืนยันการติดตามมือจริง ความพอดีของมือ หรือการหยิบวัตถุดิบบน Quest 3
+
+#### Problems / decisions
+
+- ตกลงแนวทางป้าแสง AI: ทำวงจรเล่นให้จบก่อน แล้วเพิ่มการพิมพ์คุย เสียงพูดเป็นขั้นถัดไป ระบบกฎเป็นผู้ตัดสินเสมอ (บันทึกไว้ใน `PROJECT_CONTEXT.md` หัวข้อ 7)
+
+### 17 ต.ค. 2026 — พริก 3 เม็ดและชุดทดสอบอัตโนมัติ
+
+#### Completed
+
+- `f6fefc3` วางพริก 3 เม็ดในฉากทดลอง (`Tools > Cookverse Thai > M1 > Setup Three Chilies`)
+- สร้าง `M1CollectionSmokeTest` เรียกจาก `Tools > Cookverse Thai > M1 > Test Collection Round (Play Mode)` ตรวจ 18 กรณี: รับภารกิจ, วางของผิด, ถือของในจุดรับยังไม่นับ, นับกะเพรา, ไม่นับซ้ำ, นับพริกทีละเม็ด, ผ่านเมื่อครบ, UI แสดง 3/3, Reset คืนจำนวน สถานะ ตำแหน่ง และฟิสิกส์, เริ่มรอบใหม่แล้วนับได้
+
+#### Tested
+
+- ยังไม่มีบันทึกผลการรันชุดทดสอบ ให้รันอีกครั้งและบันทึกผลในรายการ 22 ต.ค.
+
+### 21–22 ต.ค. 2026 — ทบทวนสถานะและวางแผนใหม่
+
+#### Completed
+
+- ทบทวนทุก branch และโปรเจกต์บนเครื่อง พบว่างานช้ากว่าแผนเดิมประมาณ 3 สัปดาห์ (ระบบไปถึงขั้นเก็บวัตถุดิบในสวน)
+- จัดเอกสารใหม่ทั้งชุด: อัปเดต `PROJECT_CONTEXT.md`, รวมแผนฉากเป็น `ENVIRONMENT_LAYOUT.md`, เปลี่ยนชื่อเนื้อหาเป็น `GAMEPLAY_CONTENT_V1.md` พร้อมสเปกเตาแก๊ส, ทำแผนใหม่ `PLAN_Oct-Nov_2026.md`, แผนทดสอบแว่น 27 ต.ค. และลบเอกสารที่ล้าสมัย
+
+#### Problems / decisions
+
+- ผู้พัฒนาคนเดียวทำทั้งสองฝั่ง ใช้ `feature/gameplay-content-ui` เป็น branch หลัก
+- ใช้ชื่อ **Cookverse Thai** เป็นชื่อโปรเจกต์ในเอกสาร
+- เตาแก๊สใช้ปุ่มบิด ปิด / ไฟเบา / ไฟกลาง / ไฟแรง (ไม่ลดขอบเขตส่วนนี้)
+- ไม่ล้างไก่ดิบใต้ก๊อก (หลักความปลอดภัยอาหาร) ล้างเฉพาะผัก
+- นัดทดสอบ Quest 3 วันอังคารที่ 27 ต.ค. 2026
+
+- พบว่าฟอนต์ Sarabun ถูกลบไปใน `c11774f` UI ปัจจุบันใช้ฟอนต์ของระบบ (`Thonburi`) ซึ่งไม่มีบน Quest 3 ต้องฝังฟอนต์ไทยกลับก่อนทดสอบแว่น
+- เอกสารที่อ้างถึงในบันทึกเก่าถูกเปลี่ยนชื่อ: `M1_GAMEPLAY_CONTENT_V1.md` → `GAMEPLAY_CONTENT_V1.md`, `Quest_3_Setup_and_First_Test.md` → `QUEST_3_SETUP.md` และลบ `QUEST_3_TEST_PLAN_2026-09-25.md`, `SPACE_LAYOUT_GARDEN_PLAN.md`, `M5_LATEST_WORK_PLAN_TH.md`, แผนรายวัน M1/M5 (.md/.html), Gantt ใน `outputs/` และภาพผัง v2
+
+#### Next work
+
+- เขียน `ActionLog` และปรับ `ObjectiveManager` ให้ใช้ตารางข้อมูลขั้นภารกิจ
+- รัน `M1CollectionSmokeTest` และบันทึกผล
+- ฝังฟอนต์ไทยกลับเข้าโปรเจกต์
+
+---
+
 ## Daily entry template
 
-### Date
+### วันที่ — หัวข้องาน
+
+Branch / commit:
 
 #### Completed
 
@@ -333,6 +446,7 @@ Environment
 
 #### Tested
 
+- แพลตฟอร์ม: Simulator / แว่นจริง (APK) / WebXR (ระบุอุปกรณ์และเบราว์เซอร์)
 - 
 
 #### Problems / decisions
