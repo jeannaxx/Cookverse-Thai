@@ -597,14 +597,8 @@ public static class M1RemainingGameplaySetupEditor
         IngredientIdentity krapow,
         IngredientIdentity chili)
     {
-        SerializedObject objectiveData =
-            new SerializedObject(objectiveManager);
-        objectiveData.FindProperty("currentStepId").stringValue =
-            ObjectiveManager.AcceptMissionStepId;
-        objectiveData.FindProperty("missionAccepted").boolValue = false;
-        objectiveData.FindProperty("collectedKrapowCount").intValue = 0;
-        objectiveData.FindProperty("collectedChiliCount").intValue = 0;
-        objectiveData.ApplyModifiedPropertiesWithoutUndo();
+        objectiveManager.ClearProgress();
+        EditorUtility.SetDirty(objectiveManager);
 
         SerializedObject sessionData = new SerializedObject(sessionManager);
         sessionData.FindProperty("sessionId").stringValue = string.Empty;

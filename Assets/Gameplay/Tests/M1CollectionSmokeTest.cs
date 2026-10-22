@@ -128,7 +128,7 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
             Move(chilies[n], target + Vector3.up * 3 + Vector3.right * (3 + n));
             yield return Tick();
         }
-        Check(objective.CurrentStepId == ObjectiveManager.IngredientsReadyStepId, "ผ่านเมื่อกะเพรา 1 พริก 3 ครบ");
+        Check(objective.CurrentStepId == ObjectiveManager.CollectKitchenStepId, "ผ่านเมื่อกะเพรา 1 พริก 3 ครบ");
         var ui = FindFirstObjectByType<MissionChecklistUI>();
         var text = ui.GetComponentInChildren<Text>().text;
         Check(text.Contains("3/3") && text.Contains("วัตถุดิบครบแล้ว"), "UI แสดงพริก 3/3 และวัตถุดิบครบ");

@@ -29,10 +29,10 @@ public static class M1CollectionRoundEditor
             identity.ApplyModifiedProperties();
         }
         var objective = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<ObjectiveManager>(true)).Single();
-        var data = new SerializedObject(objective);
-        data.FindProperty("requiredKrapowCount").intValue = 1;
-        data.FindProperty("requiredChiliCount").intValue = 3;
-        data.ApplyModifiedProperties();
+        Undo.RecordObject(objective, "ตั้งจำนวนวัตถุดิบ M1");
+        objective.SetRequiredCount(ObjectiveManager.CollectGardenStepId, ObjectiveManager.KrapowLeafIngredientId, 1);
+        objective.SetRequiredCount(ObjectiveManager.CollectGardenStepId, ObjectiveManager.ChiliIngredientId, 3);
+        EditorUtility.SetDirty(objective);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         Debug.Log("[ตั้งค่า M1] ใบกะเพรา 1 กำ พริก 3 ชิ้น พร้อมทดสอบแล้ว");

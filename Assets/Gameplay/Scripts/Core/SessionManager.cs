@@ -10,10 +10,14 @@ public class SessionManager : MonoBehaviour
     [Header("Current Session")]
     [SerializeField] private string sessionId;
 
+    [Tooltip("โหมดที่บันทึกลง Action Log (Training หรือ Challenge)")]
+    [SerializeField] private string mode = "Training";
+
     [Header("Session Events")]
     [SerializeField] private UnityEvent onSessionStarted;
 
     public string SessionId => sessionId;
+    public string Mode => mode;
 
     private void Start()
     {
@@ -34,6 +38,9 @@ public class SessionManager : MonoBehaviour
 
         missionManager.ResetMission();
 
+        // เริ่มบันทึกหลังรีเซ็ต เพื่อให้รอบใหม่เริ่มจาก Log ว่าง
+        ActionLog.BeginSession(sessionId, mode);
+
         Debug.Log($"[รอบการเล่น] เริ่มรอบใหม่: {sessionId}", this);
 
         onSessionStarted?.Invoke();
@@ -48,5 +55,14 @@ public class SessionManager : MonoBehaviour
     private void TestStartNewSession()
     {
         StartNewSession();
+    }
+
+    [ContextMenu("Test/Print Action Log")]
+    private void TestPrintActionLog()
+    {
+        Debug.Log(
+            $"[บันทึกเหตุการณ์] ทั้งหมด {ActionLog.Entries.Count} รายการ\n" +
+            ActionLog.ToJson(),
+            this);
     }
 }
