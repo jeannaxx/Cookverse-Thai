@@ -143,13 +143,18 @@ public class CollectionFeedbackUI : MonoBehaviour
 
     private void EnsureThaiFont()
     {
-        if (feedbackText == null || feedbackText.font != null)
+        if (feedbackText == null)
         {
             return;
         }
 
-        feedbackText.font = Font.CreateDynamicFontFromOSFont(
-            new[] { "Thonburi", "Tahoma", "Arial Unicode MS", "Arial" },
-            32);
+        // ใช้ Sarabun ที่ฝังในโปรเจกต์เสมอ ฟอนต์เดิม (LegacyRuntime)
+        // แสดงไทยได้บน Mac เท่านั้น
+        Font thaiFont = ThaiFont.Get();
+
+        if (thaiFont != null)
+        {
+            feedbackText.font = thaiFont;
+        }
     }
 }

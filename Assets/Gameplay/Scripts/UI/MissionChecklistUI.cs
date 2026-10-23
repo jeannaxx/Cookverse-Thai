@@ -71,26 +71,48 @@ public class MissionChecklistUI : MonoBehaviour
             return;
         }
 
-        string krapowMark = objectiveManager.CollectedKrapowCount >=
-            objectiveManager.RequiredKrapowCount ? "✓" : "□";
-        string chiliMark = objectiveManager.CollectedChiliCount >=
-            objectiveManager.RequiredChiliCount ? "✓" : "□";
+        // แสดงทุกขั้นที่มีรายการวัตถุดิบ ตั้งแต่ขั้นแรกจนถึงขั้นปัจจุบัน
+        // ดึงจากตาราง Mission Steps จึงไม่ต้องแก้ UI เมื่อเพิ่มวัตถุดิบใหม่
+        var builder = new System.Text.StringBuilder();
+        builder.Append("ป้าแสง: ช่วยทำผัดกะเพราให้หน่อยจ้ะ\n");
+        builder.Append("นำวัตถุดิบไปวางบนโต๊ะเตรียม\n");
 
-        string message =
-            "ป้าแสง: ช่วยทำผัดกะเพราให้หน่อยจ้ะ\n" +
-            "เก็บวัตถุดิบจากสวนแล้วนำไปวางบนโต๊ะเตรียม\n\n" +
-            "รายการวัตถุดิบ\n" +
-            $"{krapowMark} ใบกะเพรา " +
-            $"{objectiveManager.CollectedKrapowCount}/" +
-            $"{objectiveManager.RequiredKrapowCount}\n" +
-            $"{chiliMark} พริก " +
-            $"{objectiveManager.CollectedChiliCount}/" +
-            $"{objectiveManager.RequiredChiliCount}";
+        var steps = objectiveManager.Steps;
+        string currentStepId = objectiveManager.CurrentStepId;
 
-        if (objectiveManager.IsGardenCollectionComplete)
+        for (int i = 0; i < steps.Count; i++)
         {
-            message += "\n\nวัตถุดิบครบแล้ว ✓";
+            MissionStepDefinition step = steps[i];
+
+            if (step.HasRequirements)
+            {
+                builder.Append("\n").Append(step.titleThai).Append('\n');
+
+                foreach (IngredientRequirement requirement in step.requirements)
+                {
+                    // ใช้เฉพาะสัญลักษณ์ที่ Sarabun มี (■ •) เพราะ ✓ □ ไม่มีในฟอนต์
+                    builder
+                        .Append(requirement.IsComplete ? "■ " : "• ")
+                        .Append(requirement.displayNameThai).Append(' ')
+                        .Append(requirement.currentCount).Append('/')
+                        .Append(requirement.requiredCount)
+                        .Append(requirement.IsComplete ? " ครบ" : string.Empty)
+                        .Append('\n');
+                }
+
+                if (step.IsComplete)
+                {
+                    builder.Append("วัตถุดิบครบแล้ว\n");
+                }
+            }
+
+            if (step.stepId == currentStepId)
+            {
+                break;
+            }
         }
+
+        string message = builder.ToString().TrimEnd();
 
         checklistText.text = message;
     }
@@ -114,13 +136,18 @@ public class MissionChecklistUI : MonoBehaviour
 
     private void EnsureThaiFont()
     {
-        if (checklistText == null || checklistText.font != null)
+        if (checklistText == null)
         {
             return;
         }
 
-        checklistText.font = Font.CreateDynamicFontFromOSFont(
-            new[] { "Thonburi", "Tahoma", "Arial Unicode MS", "Arial" },
-            32);
+        // ใช้ Sarabun ที่ฝังในโปรเจกต์เสมอ ฟอนต์เดิม (LegacyRuntime)
+        // แสดงไทยได้บน Mac เท่านั้น
+        Font thaiFont = ThaiFont.Get();
+
+        if (thaiFont != null)
+        {
+            checklistText.font = thaiFont;
+        }
     }
 }

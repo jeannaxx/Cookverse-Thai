@@ -72,6 +72,8 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         var chilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();
         var leaf = ingredients.First(i => i.IngredientId == "krapow_leaf");
         var zone = FindFirstObjectByType<IngredientCollector>();
+        // วัตถุดิบในสวนอาจตั้งให้อยู่นิ่ง (kinematic) ตั้งแต่ต้น Reset ต้องคืนค่าเดิม
+        bool leafStartKinematic = leaf.GetComponent<Rigidbody>().isKinematic;
         var target = zone.GetComponent<Collider>().bounds.center;
         objective.ResetObjectives();
         yield return new WaitForEndOfFrame();
@@ -143,7 +145,8 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
             objective.CurrentStepId == ObjectiveManager.AcceptMissionStepId, "Reset คืนจำนวนและเป้าหมาย");
         Check(ingredients.All(i => i.CurrentState == IngredientState.Raw), "Reset คืนสถานะยังไม่เก็บ");
         Check(ingredients.Select((i,n) => Vector3.Distance(i.transform.position, starts[n]) < 0.02f).All(b => b), "Reset คืนตำแหน่งทุกชิ้น");
-        Check(!grab.GetComponent<Rigidbody>().isKinematic && grab.GetComponent<Rigidbody>().linearVelocity.sqrMagnitude < 0.01f, "Reset คืนฟิสิกส์และไม่เหวี่ยงของ");
+        var leafBody = grab.GetComponent<Rigidbody>();
+        Check(leafBody.isKinematic == leafStartKinematic && (leafBody.isKinematic || leafBody.linearVelocity.sqrMagnitude < 0.01f), "Reset คืนฟิสิกส์และไม่เหวี่ยงของ");
         FindFirstObjectByType<MissionGiver>().GiveMission();
         Move(leaf, target);
         yield return Tick();
