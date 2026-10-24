@@ -6,7 +6,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // ประตูตู้เย็นแบบต้นแบบ: จับหรือกดที่ประตูหนึ่งครั้งเพื่อเปิด/ปิด
 // ติดไว้ที่จุดบานพับ (Hinge) ประตูต้องเป็นลูกของจุดนี้และมี XRSimpleInteractable
-public class FridgeDoor : MonoBehaviour
+public class FridgeDoor : MonoBehaviour, IMissionResettable
 {
     [Header("Required References")]
     [SerializeField] private XRSimpleInteractable doorInteractable;
@@ -131,6 +131,18 @@ public class FridgeDoor : MonoBehaviour
 
         transform.localRotation = target;
         swingRoutine = null;
+    }
+
+    public void ResetForMission()
+    {
+        if (startOpen)
+        {
+            Open();
+        }
+        else
+        {
+            Close();
+        }
     }
 
     [ContextMenu("Test/Toggle Door")]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -20,6 +21,9 @@ public class ObjectiveManager : MonoBehaviour
     public const string AcceptMissionStepId = "accept_mission";
     public const string CollectGardenStepId = "collect_garden";
     public const string CollectKitchenStepId = "collect_kitchen";
+    public const string WashStepId = "wash_ingredients";
+    public const string PrepareStepId = "prepare_ingredients";
+    public const string CookStepId = "cook_krapow";
     public const string KrapowLeafIngredientId = "krapow_leaf";
     public const string ChiliIngredientId = "chili";
     public const string ChickenIngredientId = "chicken";
@@ -107,7 +111,59 @@ public class ObjectiveManager : MonoBehaviour
                     string.Empty,
                     "กระเทียม",
                     "กลีบ",
-                    3))
+                    3)),
+            // ล้างเฉพาะผัก ไม่ล้างไก่ดิบ (หลักความปลอดภัยอาหาร)
+            new MissionStepDefinition(
+                WashStepId,
+                "ล้างผักที่อ่างล้าง",
+                new IngredientRequirement(
+                    KrapowLeafIngredientId,
+                    LegacyKrapowName,
+                    "ใบกะเพรา",
+                    "กำ",
+                    1,
+                    IngredientState.Washed),
+                new IngredientRequirement(
+                    ChiliIngredientId,
+                    LegacyChiliName,
+                    "พริก",
+                    "เม็ด",
+                    3,
+                    IngredientState.Washed)),
+            new MissionStepDefinition(
+                PrepareStepId,
+                "หั่นวัตถุดิบบนเขียง",
+                new IngredientRequirement(
+                    ChickenIngredientId,
+                    string.Empty,
+                    "เนื้อไก่",
+                    "ชิ้น",
+                    1,
+                    IngredientState.Cut),
+                new IngredientRequirement(
+                    ChiliIngredientId,
+                    LegacyChiliName,
+                    "พริก",
+                    "เม็ด",
+                    3,
+                    IngredientState.Cut),
+                new IngredientRequirement(
+                    GarlicIngredientId,
+                    string.Empty,
+                    "กระเทียม",
+                    "กลีบ",
+                    3,
+                    IngredientState.Cut)),
+            new MissionStepDefinition(
+                CookStepId,
+                "ผัดไก่ในกระทะจนสุก",
+                new IngredientRequirement(
+                    ChickenIngredientId,
+                    string.Empty,
+                    "เนื้อไก่",
+                    "ชิ้น",
+                    1,
+                    IngredientState.Cooked))
         };
     }
 
@@ -305,6 +361,126 @@ public class ObjectiveManager : MonoBehaviour
         return IngredientCollectionResult.Correct;
     }
 
+    // เปลี่ยนสถานะวัตถุดิบตามขั้นภารกิจปัจจุบัน ใช้กับอ่างล้าง (Washed)
+    // เขียง (Cut) และกระทะ (Cooked) แต่ละขั้นนับจากตาราง Mission Steps
+    public IngredientCollectionResult TryAdvanceIngredient(
+        IngredientIdentity ingredient,
+        IngredientState targetState)
+    {
+        string action = ActionFor(targetState);
+        string stepId = currentStepId;
+
+        if (ingredient == null)
+        {
+            ActionLog.Record(action, stepId, isCorrect: false,
+                value: IngredientCollectionResult.InvalidIngredient.ToString());
+            return IngredientCollectionResult.InvalidIngredient;
+        }
+
+        MissionStepDefinition step = CurrentStep;
+        IngredientState before = ingredient.CurrentState;
+
+        IngredientCollectionResult Reject(IngredientCollectionResult result, string reason)
+        {
+            Debug.LogWarning($"[เป้าหมาย] {ingredient.DisplayNameThai}: {reason}", this);
+            ActionLog.Record(action, stepId, ingredient, before, before,
+                isCorrect: false, value: result.ToString());
+            return result;
+        }
+
+        if (!missionAccepted || step == null || !step.HasRequirementsFor(targetState))
+        {
+            return Reject(IngredientCollectionResult.WrongObjective,
+                $"ขั้นปัจจุบันคือ {step?.titleThai ?? currentStepId}");
+        }
+
+        IngredientRequirement requirement =
+            step.FindRequirement(ingredient.IngredientId, targetState);
+
+        if (requirement == null)
+        {
+            return Reject(IngredientCollectionResult.WrongIngredient,
+                $"ขั้นนี้ไม่ต้องใช้วัตถุดิบนี้ ({step.DescribeRequirements(targetState)})");
+        }
+
+        if (before == targetState || requirement.IsComplete)
+        {
+            return Reject(IngredientCollectionResult.Duplicate, "ทำขั้นนี้กับชิ้นนี้ไปแล้ว");
+        }
+
+        if (!CanMoveTo(before, targetState))
+        {
+            return Reject(IngredientCollectionResult.WrongIngredient,
+                $"ยังทำไม่ได้จากสถานะ {before}");
+        }
+
+        ingredient.TrySetState(targetState);
+        requirement.currentCount++;
+
+        Debug.Log(
+            $"[เป้าหมาย] {step.titleThai}: {requirement.displayNameThai} " +
+            $"{requirement.currentCount}/{requirement.requiredCount} {requirement.unitThai}",
+            this);
+
+        ActionLog.Record(action, stepId, ingredient, before, targetState,
+            isCorrect: true,
+            value: $"{requirement.currentCount}/{requirement.requiredCount}");
+
+        if (step.IsComplete)
+        {
+            AdvanceFrom(step);
+        }
+
+        NotifyObjectiveChanged();
+        return IngredientCollectionResult.Correct;
+    }
+
+    // ใส่ลงกระทะได้เฉพาะตอนถึงขั้นปรุง และวัตถุดิบต้องเตรียมแล้ว (ล้างหรือหั่น)
+    public bool CanAddToPan(IngredientIdentity ingredient, out string reason)
+    {
+        MissionStepDefinition step = CurrentStep;
+
+        if (!missionAccepted || step == null || !step.HasRequirementsFor(IngredientState.Cooked))
+        {
+            reason = "ยังไม่ถึงขั้นปรุง เตรียมวัตถุดิบให้ครบก่อน";
+            return false;
+        }
+
+        if (ingredient.CurrentState != IngredientState.Washed &&
+            ingredient.CurrentState != IngredientState.Cut)
+        {
+            reason = "วัตถุดิบนี้ยังไม่ได้ล้างหรือหั่น";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    private static bool CanMoveTo(IngredientState from, IngredientState to)
+    {
+        return to switch
+        {
+            IngredientState.Washed => from == IngredientState.Collected,
+            IngredientState.Cut => from == IngredientState.Collected ||
+                                   from == IngredientState.Washed,
+            IngredientState.Cooked => from == IngredientState.AddedToPan ||
+                                      from == IngredientState.Cooking,
+            _ => false
+        };
+    }
+
+    private static string ActionFor(IngredientState state)
+    {
+        return state switch
+        {
+            IngredientState.Washed => ActionLog.Actions.IngredientWashed,
+            IngredientState.Cut => ActionLog.Actions.IngredientCut,
+            IngredientState.Collected => ActionLog.Actions.IngredientCollected,
+            _ => ActionLog.Actions.FoodStateChanged
+        };
+    }
+
     private IngredientCollectionResult RecordRejected(
         IngredientCollectionResult result,
         string stepId,
@@ -429,6 +605,14 @@ public class ObjectiveManager : MonoBehaviour
             feedbackUI.ResetFeedback();
         }
 
+        // อ่างล้าง เขียง เตา กระทะ ตู้เย็น กลับสู่สภาพเริ่มต้น
+        foreach (IMissionResettable resettable in
+                 FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                     .OfType<IMissionResettable>())
+        {
+            resettable.ResetForMission();
+        }
+
         Debug.Log(
             "[เป้าหมาย] รีเซ็ตแล้ว: จำนวนทุกขั้นกลับเป็น 0 " +
             "วัตถุดิบกลับตำแหน่งเริ่มต้น " +
@@ -498,12 +682,13 @@ public class ObjectiveManager : MonoBehaviour
         ResetObjectives();
     }
 
+    // ใช้ตารางขั้นภารกิจล่าสุดจากโค้ด (เรียกจากเครื่องมือ Editor หรือเมนูทดสอบ)
     [ContextMenu("Test/Restore Default Steps")]
-    private void RestoreDefaultSteps()
+    public void ApplyDefaultSteps()
     {
         steps = CreateDefaultSteps();
         ClearProgress();
-        Debug.Log("[เป้าหมาย] คืนตารางขั้นภารกิจเป็นค่าเริ่มต้นแล้ว", this);
+        Debug.Log("[เป้าหมาย] ใช้ตารางขั้นภารกิจค่าเริ่มต้นแล้ว", this);
     }
 
     private void NotifyObjectiveChanged()

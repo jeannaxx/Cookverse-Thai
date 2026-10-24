@@ -51,6 +51,9 @@ public class IngredientCollector : MonoBehaviour
         }
 
         if (settled.Contains(ingredient)) return;
+
+        // ของที่เก็บแล้ว (ล้าง/หั่นแล้วด้วย) วางกลับบนโต๊ะได้ตามปกติ ไม่ต้องตรวจซ้ำ
+        if (ingredient.CurrentState != IngredientState.Raw) return;
         // Evaluate on a physics overlap after release, not in selectExited:
         // release outside the zone must never be counted from a stale overlap.
         if (!attempted.Add(ingredient)) return;

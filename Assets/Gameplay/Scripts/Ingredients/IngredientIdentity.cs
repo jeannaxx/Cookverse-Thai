@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -29,6 +30,21 @@ public class IngredientIdentity : MonoBehaviour
     private Coroutine resetRoutine;
     private XRGrabInteractable resettingGrab;
     private bool originalThrowOnDetach;
+
+    // ภาพตามสถานะ: ล้างแล้วสีสดขึ้น หั่นแล้วแยกเป็น 3 ชิ้น
+    // กำลังสุก/สุก/ไหม้ เปลี่ยนสี (ใช้ MaterialPropertyBlock ไม่แก้วัสดุจริง)
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private static readonly Color CookedColor = new(0.62f, 0.40f, 0.22f);
+    private static readonly Color BurnedColor = new(0.12f, 0.09f, 0.07f);
+    private const int CutPieceCount = 3;
+    private MaterialPropertyBlock propertyBlock;
+    private readonly List<GameObject> cutPieces = new();
+    private MeshRenderer hiddenWholeRenderer;
+    private bool wasWashed;
+
+    public event Action<IngredientIdentity, IngredientState> StateChanged;
+
     public bool IsResetting { get; private set; }
 
     public string IngredientId => ingredientId;
@@ -142,6 +158,14 @@ public class IngredientIdentity : MonoBehaviour
 
         currentState = newState;
 
+        if (newState == IngredientState.Washed)
+        {
+            wasWashed = true;
+        }
+
+        ApplyStateVisual();
+        StateChanged?.Invoke(this, newState);
+
         Debug.Log(
             $"[วัตถุดิบ] {displayNameThai} ({ingredientId}): " +
             $"{GetStateNameThai(currentState)}",
@@ -169,6 +193,7 @@ public class IngredientIdentity : MonoBehaviour
                 resettingGrab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)resettingGrab);
         }
         currentState = IngredientState.Raw;
+        ClearStateVisual();
 
         RestoreInitialPose();
         if (Application.isPlaying && isActiveAndEnabled)
@@ -223,6 +248,138 @@ public class IngredientIdentity : MonoBehaviour
             cachedRigidbody.Sleep();
         }
 
+    }
+
+    private void ApplyStateVisual()
+    {
+        if (currentState >= IngredientState.Cut && cutPieces.Count == 0)
+        {
+            CreateCutPieces();
+        }
+
+        foreach (Renderer target in GetComponentsInChildren<Renderer>(true))
+        {
+            if (!TryGetStateColor(target, out Color color))
+            {
+                target.SetPropertyBlock(null);
+                continue;
+            }
+
+            propertyBlock ??= new MaterialPropertyBlock();
+            target.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(BaseColorId, color);
+            propertyBlock.SetColor(ColorId, color);
+            target.SetPropertyBlock(propertyBlock);
+        }
+    }
+
+    private bool TryGetStateColor(Renderer target, out Color color)
+    {
+        Material material = target.sharedMaterial;
+        Color baseColor = Color.white;
+
+        if (material != null && material.HasProperty(BaseColorId))
+        {
+            baseColor = material.GetColor(BaseColorId);
+        }
+        else if (material != null && material.HasProperty(ColorId))
+        {
+            baseColor = material.GetColor(ColorId);
+        }
+
+        Color fresh = wasWashed ? Color.Lerp(baseColor, Color.white, 0.3f) : baseColor;
+
+        switch (currentState)
+        {
+            case IngredientState.Washed:
+            case IngredientState.Cut:
+            case IngredientState.AddedToPan:
+                color = fresh;
+                return wasWashed;
+            case IngredientState.Cooking:
+                color = Color.Lerp(fresh, CookedColor, 0.45f);
+                return true;
+            case IngredientState.Cooked:
+            case IngredientState.Served:
+                color = CookedColor;
+                return true;
+            case IngredientState.Burned:
+                color = BurnedColor;
+                return true;
+            default:
+                color = baseColor;
+                return false;
+        }
+    }
+
+    // แยกบล็อกเป็น 3 ชิ้นตามแกนที่ยาวที่สุด ใช้กับวัตถุดิบที่เป็นบล็อกเดียว
+    // (พริก ไก่ กระเทียม) Collider เดิมยังอยู่ จึงหยิบทั้งกองได้เหมือนเดิม
+    private void CreateCutPieces()
+    {
+        MeshRenderer wholeRenderer = GetComponent<MeshRenderer>();
+        MeshFilter wholeFilter = GetComponent<MeshFilter>();
+
+        if (wholeRenderer == null || wholeFilter == null)
+        {
+            return;
+        }
+
+        Vector3 size = transform.lossyScale;
+        int axis = size.x >= size.y && size.x >= size.z ? 0 : size.y >= size.z ? 1 : 2;
+
+        for (int i = 0; i < CutPieceCount; i++)
+        {
+            var piece = new GameObject($"CutPiece_{i + 1}");
+            piece.transform.SetParent(transform, false);
+            piece.AddComponent<MeshFilter>().sharedMesh = wholeFilter.sharedMesh;
+            piece.AddComponent<MeshRenderer>().sharedMaterials = wholeRenderer.sharedMaterials;
+
+            Vector3 position = Vector3.zero;
+            Vector3 scale = Vector3.one * 0.95f;
+            position[axis] = (i - 1) * 0.36f;
+            scale[axis] = 0.28f;
+            piece.transform.localPosition = position;
+            piece.transform.localScale = scale;
+            cutPieces.Add(piece);
+        }
+
+        wholeRenderer.enabled = false;
+        hiddenWholeRenderer = wholeRenderer;
+    }
+
+    private void ClearStateVisual()
+    {
+        foreach (GameObject piece in cutPieces)
+        {
+            if (piece == null)
+            {
+                continue;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(piece);
+            }
+            else
+            {
+                DestroyImmediate(piece);
+            }
+        }
+
+        cutPieces.Clear();
+
+        if (hiddenWholeRenderer != null)
+        {
+            hiddenWholeRenderer.enabled = true;
+            hiddenWholeRenderer = null;
+        }
+
+        wasWashed = false;
+
+        foreach (Renderer target in GetComponentsInChildren<Renderer>(true))
+        {
+            target.SetPropertyBlock(null);
+        }
     }
 
     private string GetStateNameThai(IngredientState state)

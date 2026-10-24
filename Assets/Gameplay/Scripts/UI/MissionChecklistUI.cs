@@ -93,6 +93,7 @@ public class MissionChecklistUI : MonoBehaviour
                     // ใช้เฉพาะสัญลักษณ์ที่ Sarabun มี (■ •) เพราะ ✓ □ ไม่มีในฟอนต์
                     builder
                         .Append(requirement.IsComplete ? "■ " : "• ")
+                        .Append(VerbFor(requirement.targetState))
                         .Append(requirement.displayNameThai).Append(' ')
                         .Append(requirement.currentCount).Append('/')
                         .Append(requirement.requiredCount)
@@ -115,6 +116,17 @@ public class MissionChecklistUI : MonoBehaviour
         string message = builder.ToString().TrimEnd();
 
         checklistText.text = message;
+    }
+
+    private static string VerbFor(IngredientState state)
+    {
+        return state switch
+        {
+            IngredientState.Washed => "ล้าง",
+            IngredientState.Cut => "หั่น",
+            IngredientState.Cooked => "ผัดจนสุก: ",
+            _ => string.Empty
+        };
     }
 
     private void Subscribe()

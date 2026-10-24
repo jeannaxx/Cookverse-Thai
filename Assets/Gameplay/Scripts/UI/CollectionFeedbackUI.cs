@@ -91,6 +91,12 @@ public class CollectionFeedbackUI : MonoBehaviour
         }
     }
 
+    // ข้อความจากจุดทำงาน เช่น อ่างล้าง เขียง เตา กระทะ
+    public void ShowStationMessage(string message, bool success)
+    {
+        ShowMessage(message, success ? correctColor : warningColor);
+    }
+
     public void ShowSystemError()
     {
         ShowMessage("ระบบรับวัตถุดิบยังไม่พร้อม", errorColor);
