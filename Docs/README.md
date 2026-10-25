@@ -17,7 +17,7 @@
 | [`Planning/Gameplay/GAMEPLAY_CONTENT_V1.md`](Planning/Gameplay/GAMEPLAY_CONTENT_V1.md) | สเปกเมนูผัดกะเพราไก่: วัตถุดิบ ขั้นภารกิจ เตาแก๊ส บทพูด Rubric และ Action Log |
 | [`Planning/Environment/ENVIRONMENT_LAYOUT.md`](Planning/Environment/ENVIRONMENT_LAYOUT.md) | ผังบ้าน ครัว สวน ขนาด และ Hierarchy ใน `MainVR` |
 | [`Planning/VR/QUEST_3_SETUP.md`](Planning/VR/QUEST_3_SETUP.md) | วิธีตั้งค่าและ Build APK ลง Quest 3 |
-| [`Planning/VR/QUEST_3_TEST_2026-10-27.md`](Planning/VR/QUEST_3_TEST_2026-10-27.md) | เช็กลิสต์ทดสอบแว่น 27 ต.ค. |
+| [`Planning/VR/QUEST_3_TEST_2026-10-26.md`](Planning/VR/QUEST_3_TEST_2026-10-26.md) | เช็กลิสต์ทดสอบแว่น 26 ต.ค. (บ่าย) |
 
 ภาพผังอยู่ใน `Planning/Environment/` ได้แก่ `Cookverse_Floor_Plan_Illustrated_v5.png` (บ้านและสวน) และ `Cookverse_House_8x6_Layout_Hierarchy_v1.png` (ครัว 3D)
 

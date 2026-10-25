@@ -68,7 +68,6 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
     {
         objective = FindFirstObjectByType<ObjectiveManager>();
         ingredients = FindObjectsByType<IngredientIdentity>(FindObjectsInactive.Exclude);
-        starts = ingredients.Select(i => i.transform.position).ToArray();
         var chilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();
         var leaf = ingredients.First(i => i.IngredientId == "krapow_leaf");
         var zone = FindFirstObjectByType<IngredientCollector>();
@@ -77,6 +76,8 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         var target = zone.GetComponent<Collider>().bounds.center;
         objective.ResetObjectives();
         yield return new WaitForEndOfFrame();
+        // เก็บตำแหน่งเริ่มต้นหลังรีเซ็ต รองรับการรันทดสอบหลังเล่นไปแล้วในรอบเดียวกัน
+        starts = ingredients.Select(i => i.transform.position).ToArray();
         Check(chilies.Length == 3 && objective.RequiredChiliCount == 3, "พริกในฉากและเป้าหมายครบ 3");
         Check(ingredients.Select(i => i.InstanceId).Distinct().Count() == ingredients.Length, "รหัสวัตถุดิบแต่ละชิ้นไม่ซ้ำ");
         FindFirstObjectByType<MissionGiver>().GiveMission();

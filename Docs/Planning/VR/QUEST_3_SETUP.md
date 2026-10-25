@@ -3,7 +3,7 @@
 อัปเดต: 22 ตุลาคม 2026  
 อุปกรณ์: Meta Quest 3 + Touch Plus Controller / เครื่องพัฒนา Mac
 
-คู่มือนี้ใช้ทุกครั้งที่ต้อง Build APK ลงแว่น ส่วนเช็กลิสต์ของแต่ละรอบทดสอบแยกเป็นไฟล์ตามวันที่ เช่น [`QUEST_3_TEST_2026-10-27.md`](QUEST_3_TEST_2026-10-27.md)
+คู่มือนี้ใช้ทุกครั้งที่ต้อง Build APK ลงแว่น ส่วนเช็กลิสต์ของแต่ละรอบทดสอบแยกเป็นไฟล์ตามวันที่ เช่น [`QUEST_3_TEST_2026-10-26.md`](QUEST_3_TEST_2026-10-26.md)
 
 ## สิ่งที่ตั้งไว้ในโปรเจกต์แล้ว (ตรวจจากไฟล์)
 
@@ -23,7 +23,7 @@ Unity 6000.5.9f1, OpenXR 1.17.1, Unity OpenXR Meta 2.5.1 และ XR Interactio
 1. Unity Hub → Editor 6000.5.9f1 → Add modules: Android Build Support, Android SDK & NDK Tools, OpenJDK
 2. File → Build Profiles → Meta Quest (ถ้าไม่มีให้ใช้ Android) → Switch Platform
 3. ตั้ง Scene List ให้ Scene ที่จะทดสอบเป็นลำดับแรก
-   - รอบทดสอบระบบ Gameplay (เช่น 27 ต.ค.): `Assets/Scenes/GameplayTest_M1.unity`
+   - รอบทดสอบระบบ Gameplay (เช่น 26 ต.ค.): `Assets/Scenes/GameplayTest_M1.unity`
    - รอบเดโมฉากหลัก: `Assets/Scenes/MainVR.unity`
    - ปิด `SampleScene` และ `BasicScene`
 4. Project Settings → XR Plug-in Management → Android: เปิด OpenXR และ Initialize XR on Startup แล้วแก้ Error ใน Project Validation
