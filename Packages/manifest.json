@@ -1,5 +1,16 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.de-panther"
+      ]
+    }
+  ],
   "dependencies": {
+    "com.de-panther.webxr": "https://github.com/De-Panther/unity-webxr-export.git?path=/Packages/webxr",
+    "com.de-panther.webxr-interactions": "https://github.com/De-Panther/unity-webxr-export.git?path=/Packages/webxr-interactions",
     "com.unity.feature.development": "1.0.2",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.learn.iet-framework": "6.0.6",
