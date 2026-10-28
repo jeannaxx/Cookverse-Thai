@@ -12,6 +12,21 @@ public class MissionChecklistUI : MonoBehaviour
     [SerializeField] private Vector3 localOffset =
         new Vector3(0.38f, 0.08f, 0.9f);
 
+    // ในแว่น Canvas แบบ Screen Space Overlay จะไปติดขอบเลนส์ (WebXR) หรือไม่แสดงเลย (Quest APK)
+    // ตอนเริ่มเกมจึงแปลงเป็น World Space แล้วลอยตามสายตาแบบหน่วง (ไม่ล็อกติดหน้า)
+    [Header("VR Panel (Lazy Follow)")]
+    [SerializeField] private bool convertToWorldSpace = true;
+    [SerializeField] private float panelDistance = 1.1f;   // ระยะจากตา (ม.)
+    [SerializeField] private float panelHeight = -0.2f;    // ต่ำกว่าระดับสายตา (ม.)
+    [SerializeField] private float panelSide = -0.3f;      // ลบ = ไปทางซ้าย (ม.)
+    [SerializeField] private float panelScale = 0.001f;    // 1 px = 1 มม.
+    [SerializeField] private float recenterAngle = 40f;    // หันเกินกี่องศาแล้วป้ายค่อยตามมา
+    [SerializeField] private float followSpeed = 3f;
+
+    private bool lazyFollow;
+    private bool following;
+    private Vector3 panelTarget;
+
     public void Configure(
         ObjectiveManager objective,
         Text textComponent,
@@ -37,8 +52,52 @@ public class MissionChecklistUI : MonoBehaviour
         Unsubscribe();
     }
 
+    private void Start()
+    {
+        Canvas canvas = GetComponent<Canvas>();
+        if (!convertToWorldSpace || canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            return;
+        }
+
+        Camera cam = Camera.main;
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.worldCamera = cam;
+
+        var scaler = GetComponent<CanvasScaler>();
+        if (scaler != null)
+        {
+            scaler.dynamicPixelsPerUnit = 3f; // ตัวหนังสือคมขึ้นใน World Space
+        }
+
+        var rect = (RectTransform)transform;
+        rect.sizeDelta = new Vector2(560f, 360f);
+        rect.localScale = Vector3.one * panelScale;
+
+        // ย้ายแผงเช็กลิสต์ (เดิมชิดมุมขวาบนของจอ) มาไว้กลาง Canvas
+        foreach (RectTransform child in rect)
+        {
+            child.anchorMin = child.anchorMax = child.pivot = new Vector2(0.5f, 0.5f);
+            child.anchoredPosition = Vector2.zero;
+        }
+
+        lazyFollow = true;
+        if (cam != null)
+        {
+            panelTarget = TargetFor(cam.transform);
+            transform.position = panelTarget;
+            FaceCamera(cam.transform);
+        }
+    }
+
     private void LateUpdate()
     {
+        if (lazyFollow)
+        {
+            LazyFollow();
+            return;
+        }
+
         Canvas checklistCanvas = GetComponent<Canvas>();
 
         if (checklistCanvas != null &&
@@ -54,6 +113,68 @@ public class MissionChecklistUI : MonoBehaviour
 
         transform.position = followTarget.TransformPoint(localOffset);
         transform.rotation = followTarget.rotation;
+    }
+
+    private void LazyFollow()
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+        {
+            return;
+        }
+
+        Transform head = cam.transform;
+        Vector3 toPanel = transform.position - head.position;
+        Vector3 flatForward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+        Vector3 flatToPanel = Vector3.ProjectOnPlane(toPanel, Vector3.up);
+        float angle = Vector3.Angle(flatForward, flatToPanel);
+        float distanceError = Mathf.Abs(flatToPanel.magnitude - panelDistance);
+
+        // ป้ายอยู่นิ่ง ๆ จนกว่าจะหันไปไกลหรือเดินห่างเกิน แล้วค่อยลอยตามมาเบา ๆ
+        if (!following && (angle > recenterAngle || distanceError > 0.6f))
+        {
+            following = true;
+        }
+
+        if (following)
+        {
+            panelTarget = TargetFor(head);
+            transform.position = Vector3.Lerp(transform.position, panelTarget, Time.deltaTime * followSpeed);
+            if ((transform.position - panelTarget).sqrMagnitude < 0.0004f)
+            {
+                following = false;
+            }
+        }
+        else
+        {
+            // ความสูงตามหัวเสมอ (เช่น ตอนขึ้นบันไดหรือก้ม)
+            Vector3 p = transform.position;
+            p.y = Mathf.Lerp(p.y, head.position.y + panelHeight, Time.deltaTime * followSpeed);
+            transform.position = p;
+        }
+
+        FaceCamera(head);
+    }
+
+    private Vector3 TargetFor(Transform head)
+    {
+        Vector3 forward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            forward = Vector3.ProjectOnPlane(head.up, Vector3.up);
+        }
+        forward.Normalize();
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        return head.position + forward * panelDistance + right * panelSide + Vector3.up * panelHeight;
+    }
+
+    private void FaceCamera(Transform head)
+    {
+        Vector3 away = transform.position - head.position;
+        if (away.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(away, Vector3.up);
+        }
     }
 
     public void RefreshChecklist()

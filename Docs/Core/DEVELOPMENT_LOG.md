@@ -464,6 +464,40 @@ Branch / commit: `feature/gameplay-content-ui` · `3a2d34a`, `b74849c`
 - เช้า 26 ต.ค.: รันชุดทดสอบ · Scene List · Project Validation · Build APK
 - บ่าย 26 ต.ค.: ทดสอบ Quest 3 ตาม `QUEST_3_TEST_2026-10-26.md`
 
+### 26–27 ต.ค. 2026 — ทดสอบแว่นผ่าน APK ไม่ได้ → ทำ WebXR แทน
+
+Branch / commit: `feature/gameplay-content-ui` (`ca4293f`, `24376fa`) · `feature/webxr` (`a48457f`, `47847de` และต่อจากนั้น)
+
+#### Completed
+
+- แก้บันไดหน้าบ้าน: ทางลาดล่องหน `Stairs_WalkRamp` ชัน 26° และปิด Collider ของขั้นบันได (`Tools > Cookverse Thai > M1 > Fix Front Stairs`)
+- เพิ่ม Teleportation Area ที่ `HouseFloor`
+- Build APK สำเร็จ (`Builds/Quest/CookverseThai_M1.apk` 93 MB) แต่**ลงแว่นไม่ได้** (ดูปัญหาด้านล่าง)
+- ทำเวอร์ชันเว็บบน branch `feature/webxr`: WebXR Export + WebXR Interactions 0.25.0, Template `WebXRFullView2020`, Gzip + Decompression Fallback (ไฟล์ 28 MB)
+- ขึ้นเว็บที่ Netlify: `https://candid-scone-736ec1.netlify.app` (Public)
+- แก้บั๊ก WebXR Export กับ Unity 6.5 (`getWasmTableEntry` หาย) ด้วย `Assets/Plugins/WebGL/WebXRWasmTableFix.jspre`
+- แก้ตัวสูงเกินบนเว็บ (Camera Y Offset 1.6 ถูกบวกซ้ำ) ด้วย `WebXRHeightFix.cs` และตั้ง XR Origin เป็น Floor
+- จอภารกิจเปลี่ยนจาก Screen Space Overlay (ติดขอบเลนส์ใน WebXR และไม่ขึ้นใน APK) เป็น World Space ลอยตามแบบหน่วง
+
+#### Tested
+
+- แพลตฟอร์ม: **Quest 3 ผ่าน WebXR (Meta Quest Browser)** ครั้งแรก
+- เข้า VR ได้ ✅
+- ตัวผู้เล่นสูงเกินบ้าน → แก้แล้ว (v4) รอยืนยันในแว่น
+
+#### Problems / decisions
+
+- **Developer Mode เปิดได้เฉพาะบัญชีเจ้าของแว่น (อาจารย์)** บัญชีที่เพิ่มทีหลังเปิดไม่ได้ → ลง APK ไม่ได้ ต้องให้อาจารย์เปิดให้ หรือใช้ WebXR
+- Netlify ใช้ระบบเครดิต (เหลือ ~249) → รวมแก้หลายอย่างแล้วค่อย Deploy ครั้งเดียว
+- **ค้างแก้ (จดไว้ 27 ต.ค.):**
+  - **จอภารกิจจมพื้น:** ตั้งไว้ต่ำกว่าสายตา 0.2 ม. ถ้ากล้องอยู่ต่ำ (เช่น ยังไม่เข้า VR บน Mac หรือความสูงจาก WebXR มาช้า) ป้ายจะจมใต้พื้นและตัวหนังสือถูกตัด → ต้องกันไม่ให้ป้ายต่ำกว่าพื้นที่ยืน และตั้ง Offset 0 เฉพาะตอนเข้า VR จริง
+  - ยังไม่ได้ทดสอบในแว่น: ตัวจับ/มือ เดิน จับของ ล้าง หั่น เตา ความลื่น
+
+#### Next work
+
+- รวมแก้: จอภารกิจจมพื้น + ความสูงตอนยังไม่เข้า VR → Build v6 → Deploy
+- ทดสอบในแว่นตามเช็กลิสต์ A–F (`QUEST_3_TEST_2026-10-26.md`)
+
 ---
 
 ## Daily entry template

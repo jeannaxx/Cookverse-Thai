@@ -1,6 +1,6 @@
 # Cookverse Thai — สารบัญเอกสาร
 
-อัปเดต: 22 ตุลาคม 2026
+อัปเดต: 27 ตุลาคม 2026
 
 ## Core — สถานะและข้อตกลง
 
@@ -18,6 +18,7 @@
 | [`Planning/Environment/ENVIRONMENT_LAYOUT.md`](Planning/Environment/ENVIRONMENT_LAYOUT.md) | ผังบ้าน ครัว สวน ขนาด และ Hierarchy ใน `MainVR` |
 | [`Planning/VR/QUEST_3_SETUP.md`](Planning/VR/QUEST_3_SETUP.md) | วิธีตั้งค่าและ Build APK ลง Quest 3 |
 | [`Planning/VR/QUEST_3_TEST_2026-10-26.md`](Planning/VR/QUEST_3_TEST_2026-10-26.md) | เช็กลิสต์ทดสอบแว่น 26 ต.ค. (บ่าย) |
+| [`Planning/VR/WEBXR_2026-10-27.md`](Planning/VR/WEBXR_2026-10-27.md) | เวอร์ชันเว็บ (WebXR): ตั้งค่า บั๊กที่แก้ วิธีขึ้น Netlify และงานค้าง (branch `feature/webxr`) |
 
 ภาพผังอยู่ใน `Planning/Environment/` ได้แก่ `Cookverse_Floor_Plan_Illustrated_v5.png` (บ้านและสวน) และ `Cookverse_House_8x6_Layout_Hierarchy_v1.png` (ครัว 3D)
 
