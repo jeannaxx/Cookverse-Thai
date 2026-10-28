@@ -6176,6 +6176,13 @@ MonoBehaviour:
   checklistText: {fileID: 1103146085}
   followTarget: {fileID: 800331501}
   localOffset: {x: 0.38, y: 0.08, z: 0.9}
+  convertToWorldSpace: 1
+  panelDistance: 1.1
+  panelHeight: -0.2
+  panelSide: -0.3
+  panelScale: 0.001
+  recenterAngle: 40
+  followSpeed: 3
 --- !u!114 &501790540
 MonoBehaviour:
   m_ObjectHideFlags: 0
