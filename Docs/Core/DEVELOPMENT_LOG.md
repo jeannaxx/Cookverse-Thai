@@ -498,6 +498,21 @@ Branch / commit: `feature/gameplay-content-ui` (`ca4293f`, `24376fa`) · `featur
 - รวมแก้: จอภารกิจจมพื้น + ความสูงตอนยังไม่เข้า VR → Build v6 → Deploy
 - ทดสอบในแว่นตามเช็กลิสต์ A–F (`QUEST_3_TEST_2026-10-26.md`)
 
+### 28 ต.ค. 2026 — เก็บกวาดไฟล์ซ้ำ/โฟลเดอร์ว่าง (แชท M1)
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- ลบ `Assets/MainVR.unity` (ฉากเปล่าจาก VR template 7 ก.ย. มีแค่ Directional Light, Main Camera, TestFloor) ตรวจแล้วไม่มีไฟล์ใดอ้าง GUID `e4c6f7fc…` · ฉากหลักตัวจริงคือ `Assets/Scenes/MainVR.unity` ไม่ถูกแตะ
+- ลบโฟลเดอร์ว่าง `Assets/Gameplay/Data/New Folder` (+ .meta)
+
+#### Problems / decisions
+
+- ไม่พบ `Builds/Quest/CookverseThai_M1.apk` ในเครื่องแล้ว → ต้อง Build ใหม่เมื่อจะลงแว่น (M5)
+- ไฟล์ใน `Builds/` (เช่น `zisd9tgA`, `untitled folder`, WedXrV3–V5 ซ้อนใน WedXr1) ยังไม่แตะ — อยู่นอก git
+- `Assets/Gameplay/Prefabs/NPC` โฟลเดอร์ว่าง เก็บไว้สำหรับป้าแสง
+
 ---
 
 ## Daily entry template
