@@ -104,11 +104,27 @@ Assets/Gameplay
 
 > **ฟอนต์ภาษาไทย:** ใช้ Sarabun ที่ฝังในโปรเจกต์ (`Assets/Gameplay/UI/Resources/Fonts/`) ผ่าน `ThaiFont.cs` ใช้ได้บน Quest 3 (กู้กลับจาก Git เมื่อ 24 ต.ค.) ฟอนต์นี้ไม่มีสัญลักษณ์ ✓ □ ให้ใช้ ■ • แทน
 
+### ไฟล์ของ M5 (XR/WebXR) — แยกจาก Gameplay (29 ต.ค. 2026)
+
+```text
+Assets/XR-Web
+├── Scripts/  WebXRHeightFix (Camera Y Offset = 0 บนเว็บ)
+└── Editor/   M1TrackingOriginEditor (Tracking Origin = Floor), M1StairsRampEditor (ทางลาด Stairs_WalkRamp)
+```
+
+ไฟล์ M5 ที่อยู่ที่อื่น: `Assets/Plugins/WebGL/WebXRWasmTableFix.jspre`, `Assets/WebGLTemplates/`, `Assets/XR/Settings/`, `Docs/Planning/VR/`
+
+ไฟล์ใช้ร่วม (แก้แล้วจดใน LOG ว่าแชทไหนแก้): `Assets/Gameplay/Scripts/UI/MissionChecklistUI.cs` (M1 สร้าง, M5 ทำ World Space lazy-follow), ฉาก `GameplayTest_M1.unity`
+
+> ชื่อคลาสและเมนูของ Editor script M5 ยังขึ้นต้นด้วย M1 (`Tools > Cookverse Thai > M1 > Fix ...`) เพื่อไม่ให้กระทบการใช้งานเดิม
+> แชท M1 และ M5 ใช้โฟลเดอร์โปรเจกต์เดียวกัน (อยู่ได้ทีละ branch) → ทำทีละแชท และเช็ก `git branch --show-current` ก่อนแก้ทุกครั้ง
+
 ### Git branch
 
 | Branch | การใช้งาน |
 |---|---|
 | `feature/gameplay-content-ui` | **branch ทำงานหลัก** ทั้งระบบ Gameplay และการรวมเข้า `MainVR` |
+| `feature/webxr` | งาน M5 (XR/WebXR/แว่น) แยกแชท merge กับ `feature/gameplay-content-ui` เป็นระยะ |
 | `develop` | merge เข้ามาทุกครั้งที่ระบบหนึ่งผ่านการทดสอบ |
 | `main` | เฉพาะเวอร์ชันที่พร้อมนำเสนอ |
 | `feature/xr-webxr-integration` | ไม่ใช้พัฒนาต่อแล้ว งานฉากทั้งหมดรวมอยู่ใน `develop` |

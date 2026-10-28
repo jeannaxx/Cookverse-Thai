@@ -513,6 +513,25 @@ Branch: `feature/gameplay-content-ui`
 - ไฟล์ใน `Builds/` (เช่น `zisd9tgA`, `untitled folder`, WedXrV3–V5 ซ้อนใน WedXr1) ยังไม่แตะ — อยู่นอก git
 - `Assets/Gameplay/Prefabs/NPC` โฟลเดอร์ว่าง เก็บไว้สำหรับป้าแสง
 
+### 29 ต.ค. 2026 (00:10) — แยกไฟล์ M5 ออกจาก Gameplay (แชท M1)
+
+Branch: `feature/webxr` (`4bf8ca4`) และ cherry-pick เข้า `feature/gameplay-content-ui`
+
+#### Completed
+
+- ย้าย `WebXRHeightFix.cs` → `Assets/XR-Web/Scripts/` · `M1TrackingOriginEditor.cs`, `M1StairsRampEditor.cs` → `Assets/XR-Web/Editor/` (พร้อม .meta, GUID เดิม, hash เนื้อหาตรงกัน)
+- แก้ path ใน `Docs/Planning/VR/WEBXR_2026-10-27.md` · เพิ่มหัวข้อไฟล์ของ M5 และแถว `feature/webxr` ใน `PROJECT_CONTEXT.md`
+
+#### Tested
+
+- ตรวจก่อนย้าย: ไม่มี asmdef, ไม่มีฉาก/Prefab อ้าง GUID ของ 3 ไฟล์, ไม่มีโค้ดอื่นเรียกชื่อคลาส · Unity ไม่ได้เปิดอยู่ตอนย้าย
+- ยังไม่ได้เปิด Unity ยืนยันคอมไพล์ → เปิดแล้วดู Console + ลองเมนู `Tools > Cookverse Thai > M1 > Fix ...` ว่ายังขึ้น
+
+#### Problems / decisions
+
+- พบการสลับ branch ไปมาตอน 00:00–00:01 (ไม่ได้มาจากแชท M1) → ตั้งกติกาทำทีละแชทและเช็ก branch ก่อนแก้
+- บน `feature/webxr` ยังมี `Assets/MainVR.unity` และ `New Folder.meta` (ลบแค่บน branch M1 ใน `d4c339c`) จะหายเมื่อ merge
+
 ---
 
 ## Daily entry template
