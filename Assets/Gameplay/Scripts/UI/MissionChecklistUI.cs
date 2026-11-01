@@ -1,4 +1,6 @@
+using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class MissionChecklistUI : MonoBehaviour
@@ -22,6 +24,18 @@ public class MissionChecklistUI : MonoBehaviour
     [SerializeField] private float panelScale = 0.001f;    // 1 px = 1 มม.
     [SerializeField] private float recenterAngle = 40f;    // หันเกินกี่องศาแล้วป้ายค่อยตามมา
     [SerializeField] private float followSpeed = 3f;
+
+    // M5 (2 พ.ย.): กันป้ายจมพื้น/จมเข้าผนัง ที่เจอจากการทดสอบ WebXR
+    [Header("VR Panel (Visibility)")]
+    [SerializeField] private float minHeightAboveFloor = 0.15f; // ขอบล่างของป้ายต้องสูงจากพื้นที่ยืนอย่างน้อยเท่านี้ (ม.)
+    [SerializeField] private bool avoidWalls = true;           // มีผนัง/เคาน์เตอร์คั่นระหว่างหัวกับป้าย → ดึงป้ายมาไว้หน้าวัตถุนั้น
+    [SerializeField] private float minPanelDistance = 0.45f;   // ดึงเข้ามาใกล้สุดเท่านี้ (ม.)
+    [SerializeField] private bool drawOnTop = false;           // วาดทับทุกอย่าง (ปิดไว้: ทับมือ/Controller ด้วย)
+
+    private XROrigin xrOrigin;
+    private bool searchedOrigin;
+    private Material onTopMaterial;
+    private readonly RaycastHit[] rayHits = new RaycastHit[16];
 
     private bool lazyFollow;
     private bool following;
@@ -81,12 +95,26 @@ public class MissionChecklistUI : MonoBehaviour
             child.anchoredPosition = Vector2.zero;
         }
 
-        lazyFollow = true;
-        if (cam != null)
+        if (drawOnTop)
         {
-            panelTarget = TargetFor(cam.transform);
+            ApplyOnTopMaterial();
+        }
+
+        lazyFollow = true;
+        Transform head = Head();
+        if (head != null)
+        {
+            panelTarget = TargetFor(head);
             transform.position = panelTarget;
-            FaceCamera(cam.transform);
+            FaceCamera(head);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (onTopMaterial != null)
+        {
+            Destroy(onTopMaterial);
         }
     }
 
@@ -117,13 +145,12 @@ public class MissionChecklistUI : MonoBehaviour
 
     private void LazyFollow()
     {
-        Camera cam = Camera.main;
-        if (cam == null)
+        Transform head = Head();
+        if (head == null)
         {
             return;
         }
 
-        Transform head = cam.transform;
         Vector3 toPanel = transform.position - head.position;
         Vector3 flatForward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
         Vector3 flatToPanel = Vector3.ProjectOnPlane(toPanel, Vector3.up);
@@ -131,7 +158,7 @@ public class MissionChecklistUI : MonoBehaviour
         float distanceError = Mathf.Abs(flatToPanel.magnitude - panelDistance);
 
         // ป้ายอยู่นิ่ง ๆ จนกว่าจะหันไปไกลหรือเดินห่างเกิน แล้วค่อยลอยตามมาเบา ๆ
-        if (!following && (angle > recenterAngle || distanceError > 0.6f))
+        if (!following && (angle > recenterAngle || distanceError > 0.6f || IsBlocked(head.position, transform.position)))
         {
             following = true;
         }
@@ -149,7 +176,7 @@ public class MissionChecklistUI : MonoBehaviour
         {
             // ความสูงตามหัวเสมอ (เช่น ตอนขึ้นบันไดหรือก้ม)
             Vector3 p = transform.position;
-            p.y = Mathf.Lerp(p.y, head.position.y + panelHeight, Time.deltaTime * followSpeed);
+            p.y = Mathf.Lerp(p.y, ClampToFloor(head.position.y + panelHeight), Time.deltaTime * followSpeed);
             transform.position = p;
         }
 
@@ -165,7 +192,113 @@ public class MissionChecklistUI : MonoBehaviour
         }
         forward.Normalize();
         Vector3 right = Vector3.Cross(Vector3.up, forward);
-        return head.position + forward * panelDistance + right * panelSide + Vector3.up * panelHeight;
+        Vector3 target = head.position + forward * panelDistance + right * panelSide + Vector3.up * panelHeight;
+        target.y = ClampToFloor(target.y);
+        return PullInFrontOfWalls(head.position, target);
+    }
+
+    // ถ้ามีผนัง/เคาน์เตอร์/ตู้ (วัตถุที่ไม่มี Rigidbody) คั่นอยู่ ให้ป้ายมาอยู่หน้าวัตถุนั้นแทนการจมเข้าไป
+    private Vector3 PullInFrontOfWalls(Vector3 headPos, Vector3 target)
+    {
+        if (!avoidWalls)
+        {
+            return target;
+        }
+
+        Vector3 toTarget = target - headPos;
+        float distance = toTarget.magnitude;
+        if (distance < 0.001f || !TryGetBlockingHit(headPos, toTarget / distance, distance + 0.05f, out float hitDistance))
+        {
+            return target;
+        }
+
+        float pulled = Mathf.Max(hitDistance - 0.08f, minPanelDistance);
+        Vector3 result = headPos + toTarget / distance * pulled;
+        result.y = ClampToFloor(result.y);
+        return result;
+    }
+
+    private bool IsBlocked(Vector3 headPos, Vector3 panelPos)
+    {
+        if (!avoidWalls)
+        {
+            return false;
+        }
+
+        Vector3 toPanel = panelPos - headPos;
+        float distance = toPanel.magnitude;
+        return distance > minPanelDistance + 0.1f &&
+               TryGetBlockingHit(headPos, toPanel / distance, distance, out _);
+    }
+
+    private bool TryGetBlockingHit(Vector3 origin, Vector3 direction, float maxDistance, out float hitDistance)
+    {
+        hitDistance = float.MaxValue;
+        int count = Physics.RaycastNonAlloc(origin, direction, rayHits, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < count; i++)
+        {
+            RaycastHit hit = rayHits[i];
+            // ไม่นับของที่หยิบได้/ขยับได้ (มี Rigidbody) และตัวผู้เล่นเอง
+            if (hit.collider.attachedRigidbody != null)
+            {
+                continue;
+            }
+
+            if (xrOrigin != null && hit.collider.transform.IsChildOf(xrOrigin.transform))
+            {
+                continue;
+            }
+
+            hitDistance = Mathf.Min(hitDistance, hit.distance);
+        }
+
+        return hitDistance < float.MaxValue;
+    }
+
+    // กล้องของผู้เล่นจาก XR Origin (กล้องที่ถูก Track จริง) ถ้าไม่มีค่อยใช้ Camera.main
+    private Transform Head()
+    {
+        if (xrOrigin == null && !searchedOrigin)
+        {
+            searchedOrigin = true;
+            xrOrigin = FindAnyObjectByType<XROrigin>();
+        }
+
+        if (xrOrigin != null && xrOrigin.Camera != null)
+        {
+            return xrOrigin.Camera.transform;
+        }
+
+        Camera cam = Camera.main;
+        return cam != null ? cam.transform : null;
+    }
+
+    // ไม่ให้ขอบล่างของป้ายต่ำกว่าพื้นที่ผู้เล่นยืน (ตำแหน่ง XR Origin = เท้า)
+    private float ClampToFloor(float centerY)
+    {
+        if (xrOrigin == null)
+        {
+            return centerY;
+        }
+
+        var rect = (RectTransform)transform;
+        float halfHeight = rect.rect.height * 0.5f * transform.lossyScale.y;
+        float minY = xrOrigin.transform.position.y + minHeightAboveFloor + halfHeight;
+        return Mathf.Max(centerY, minY);
+    }
+
+    // ใช้วัสดุ UI ที่ปิดการเทียบความลึก (ZTest Always) ป้ายจึงไม่จมหายเข้าไปในพื้นหรือผนัง
+    private void ApplyOnTopMaterial()
+    {
+        onTopMaterial = new Material(Canvas.GetDefaultCanvasMaterial());
+        onTopMaterial.name = "MissionChecklist_OnTop";
+        onTopMaterial.SetInt("unity_GUIZTestMode", (int)CompareFunction.Always);
+
+        foreach (Graphic graphic in GetComponentsInChildren<Graphic>(true))
+        {
+            graphic.material = onTopMaterial;
+        }
     }
 
     private void FaceCamera(Transform head)

@@ -500,6 +500,33 @@ Branch / commit: `feature/gameplay-content-ui` (`ca4293f`, `24376fa`) · `featur
 
 ---
 
+### 2 พ.ย. 2026 — แก้ป้ายภารกิจจมพื้นบน WebXR (แชท M5)
+
+Branch: `feature/webxr` (ยังไม่ commit — ผู้ใช้ commit/push เอง)
+
+#### Completed
+
+- `Assets/XR-Web/Scripts/WebXRHeightFix.cs`: เดิมตั้ง Camera Y Offset = 0 ตั้งแต่เปิดเว็บ → หน้าเว็บก่อนเข้า VR กล้องอยู่ที่พื้น · ใหม่: ก่อนเข้า VR คง Offset ปกติ (1.6 ม.) และตั้งเป็น 0 **เมื่อแว่นเริ่มส่งความสูงหัวมา** (กล้องเทียบ Camera Offset ≥ 0.3 ม.) · เปลี่ยนเป็น MonoBehaviour ที่สร้างเองตอนเริ่มเกม (เฉพาะ WebGL) · ไม่เรียก API WebXR Export เพราะแพ็กเกจ `autoReferenced: false`
+- `Assets/Gameplay/Scripts/UI/MissionChecklistUI.cs` (**ไฟล์ร่วมกับ M1 — แก้โดยแชท M5**):
+  - ใช้กล้องจาก `XROrigin.Camera` (ถ้าไม่มีค่อยใช้ `Camera.main`)
+  - กันขอบล่างป้ายไม่ให้ต่ำกว่าพื้นที่ยืน (`minHeightAboveFloor` 0.15 ม. เทียบตำแหน่ง XR Origin)
+  - `drawOnTop`: วัสดุ UI แบบ ZTest Always ป้ายไม่ถูกพื้น ผนัง ตู้ ตัดตัวหนังสือ
+  - ค่าตำแหน่งเดิม (ระยะ 1.1 ม. ต่ำกว่าสายตา 0.2 ม. เยื้องซ้าย 0.3 ม.) ไม่เปลี่ยน
+  - **รอบ 2 (2 พ.ย. 03:00):** ใน Simulator เห็นว่า `drawOnTop` ทำให้ป้ายวาดทับ Controller/มือ → ปิด `drawOnTop` เป็นค่าเริ่มต้น แล้วเพิ่ม `avoidWalls`: ยิง Raycast จากหัวไปป้าย ถ้าชนวัตถุที่ไม่มี Rigidbody (ผนัง เคาน์เตอร์ ตู้) ดึงป้ายมาไว้หน้าวัตถุ (ใกล้สุด `minPanelDistance` 0.45 ม.) ไม่นับของที่หยิบได้และตัวผู้เล่น
+  - ตัดสินใจ: ไม่ใช้ป้ายมุมจอ (HUD) แบบเกมจอแบน เพราะมุมจอในแว่นคือขอบเลนส์ เบลอ และใน APK Overlay ไม่แสดง · ทางเลือกในอนาคต: ป้ายติดข้อมือซ้าย / กระดานภารกิจในครัว
+
+#### Tested
+
+- WebXR v5 บน Quest 3 (2 พ.ย.): ป้ายภารกิจจมพื้น เห็นแค่บรรทัดแรก ภาพจากหน้าเว็บก่อนกดเข้า VR กล้องอยู่ระดับพื้น · ตัวอักษรไทยบรรทัดแรกแสดงปกติ
+- โค้ดใหม่**ยังไม่ได้คอมไพล์ใน Unity** และยังไม่ Build v6
+
+#### Next work
+
+- เปิด Unity บน `feature/webxr` ดู Console → Play ใน Simulator ว่าป้ายยังขึ้นปกติ → Build v6 → Deploy → ทดสอบในแว่นทั้งก่อนและหลังกดเข้า VR
+- ข้อสังเกต: 29 ต.ค.–2 พ.ย. เครื่องค้างอยู่บน branch เก่า `feature/xr-webxr-integration` · มี stash `M5 2-Nov: OpenXRPackageSettings fileID reorder` (แค่ Unity เรียง fileID ใหม่ ทิ้งได้)
+
+---
+
 ## Daily entry template
 
 ### วันที่ — หัวข้องาน
