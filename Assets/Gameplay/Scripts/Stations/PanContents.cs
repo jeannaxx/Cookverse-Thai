@@ -5,9 +5,11 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // พื้นที่ในกระทะบนเตา
 // - ปล่อยวัตถุดิบที่เตรียมแล้ว (ล้าง/หั่น) ลงในกระทะตอนถึงขั้นปรุง → AddedToPan
+// - เครื่องปรุงจากขวด (SeasoningBottle) เท 1 ครั้ง = 1 Portion เทซ้ำไม่นับเพิ่ม
+// - การคนจากตะหลิว (SpatulaStirrer): ครั้งแรกหลังใส่เครื่องหอม / ครั้งสุดท้ายหลังใส่กะเพรา
+// - ลำดับตรวจโดย CookingOrder ใส่ผิดลำดับยังใส่ได้ แต่บันทึก isCorrect=false พร้อมรหัสใน value
 // - ไก่ในกระทะสะสมความร้อนตามระดับไฟของ GasStove เฉพาะตอนเปิดไฟและไก่อยู่ในกระทะ
 //   0 = ดิบ · >0 = กำลังสุก · ≥100 = สุก · ≥160 = ไหม้ (ค่าร่าง ปรับใน Inspector)
-// ลำดับการใส่ของ เครื่องปรุง และการคน ทำในขั้นถัดไป
 [RequireComponent(typeof(Collider))]
 public class PanContents : MonoBehaviour, IMissionResettable
 {
@@ -21,12 +23,23 @@ public class PanContents : MonoBehaviour, IMissionResettable
     [SerializeField] private float cookedAtHeat = 100f;
     [SerializeField] private float burnedAtHeat = 160f;
 
+    [Header("Pour / Stir Area")]
+    [Tooltip("ขยายขอบกระทะแนวนอนเวลาเช็กว่าปากขวด/ปลายตะหลิวอยู่ในกระทะ (เมตร)")]
+    [SerializeField] private float horizontalMargin = 0.05f;
+    [Tooltip("ความสูงเหนือกระทะที่ยังนับว่าเทลงกระทะ (เมตร)")]
+    [SerializeField] private float pourHeightAbovePan = 0.5f;
+
     private readonly Dictionary<Collider, IngredientIdentity> colliders = new();
     private readonly HashSet<IngredientIdentity> inPan = new();
     private readonly HashSet<IngredientIdentity> rejected = new();
     private readonly Dictionary<IngredientIdentity, float> heat = new();
+    private readonly CookingOrder order = new();
+    private Collider zoneCollider;
 
     public IReadOnlyCollection<IngredientIdentity> Contents => inPan;
+    public CookingOrder Order => order;
+    public int StirCount { get; private set; }
+    public bool HasAnything => order.Added.Count > 0;
 
     public float GetHeat(IngredientIdentity ingredient)
     {
@@ -44,6 +57,49 @@ public class PanContents : MonoBehaviour, IMissionResettable
     {
         GetComponent<Collider>().isTrigger = true;
     }
+
+    private void Awake()
+    {
+        zoneCollider = GetComponent<Collider>();
+    }
+
+    private string CurrentStepId => objectiveManager != null ? objectiveManager.CurrentStepId : string.Empty;
+    private string HeatValue => stove != null ? $"heat={stove.Level}" : "heat=?";
+
+    // ---------- พื้นที่กระทะ ----------
+
+    private Bounds PanBounds
+    {
+        get
+        {
+            if (zoneCollider == null)
+            {
+                zoneCollider = GetComponent<Collider>();
+            }
+
+            return zoneCollider.bounds;
+        }
+    }
+
+    // ปลายตะหลิวอยู่ในกระทะ
+    public bool ContainsPoint(Vector3 point)
+    {
+        Bounds b = PanBounds;
+        b.Expand(new Vector3(horizontalMargin * 2f, 0.1f, horizontalMargin * 2f));
+        return b.Contains(point);
+    }
+
+    // ปากขวดอยู่เหนือกระทะ (ในแนวนอนอยู่ในขอบกระทะ และสูงไม่เกิน pourHeightAbovePan)
+    public bool IsAbovePan(Vector3 point)
+    {
+        Bounds b = PanBounds;
+        bool insideXZ =
+            point.x >= b.min.x - horizontalMargin && point.x <= b.max.x + horizontalMargin &&
+            point.z >= b.min.z - horizontalMargin && point.z <= b.max.z + horizontalMargin;
+        return insideXZ && point.y >= b.min.y && point.y <= b.max.y + pourHeightAbovePan;
+    }
+
+    // ---------- วัตถุดิบที่ปล่อยลงกระทะ ----------
 
     private void OnTriggerEnter(Collider other)
     {
@@ -109,7 +165,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
 
     private void TryAdd(IngredientIdentity ingredient)
     {
-        string stepId = objectiveManager != null ? objectiveManager.CurrentStepId : string.Empty;
+        string stepId = CurrentStepId;
         IngredientState before = ingredient.CurrentState;
 
         string reason = "ระบบเป้าหมายยังไม่พร้อม";
@@ -123,15 +179,101 @@ public class PanContents : MonoBehaviour, IMissionResettable
             return;
         }
 
+        string mistake = order.Evaluate(ingredient.IngredientId);
+        order.MarkAdded(ingredient.IngredientId);
+
         ingredient.TrySetState(IngredientState.AddedToPan);
         inPan.Add(ingredient);
         heat[ingredient] = 0f;
 
         ActionLog.Record(ActionLog.Actions.IngredientAddedToPan, stepId, ingredient,
-            before, IngredientState.AddedToPan, isCorrect: true,
-            value: stove != null ? $"heat={stove.Level}" : null);
-        Show($"ใส่{ingredient.DisplayNameThai}ลงกระทะ", true);
+            before, IngredientState.AddedToPan, isCorrect: mistake == null,
+            value: OrderValue(mistake));
+        objectiveManager.RecordCookingProgress(ingredient.IngredientId, IngredientState.AddedToPan);
+        ShowAdded(ingredient.DisplayNameThai, mistake);
     }
+
+    // ---------- เครื่องปรุงจากขวด ----------
+
+    public bool AddSeasoning(string ingredientId, string displayNameThai, string instanceId)
+    {
+        string stepId = CurrentStepId;
+
+        string reason = "ระบบเป้าหมายยังไม่พร้อม";
+
+        if (objectiveManager == null || !objectiveManager.CanCookNow(out reason))
+        {
+            ActionLog.Record(ActionLog.Actions.IngredientAddedToPan, stepId, ingredientId, instanceId,
+                isCorrect: false, value: reason);
+            Show($"{displayNameThai}: {reason}", false);
+            return false;
+        }
+
+        if (order.Has(ingredientId))
+        {
+            ActionLog.Record(ActionLog.Actions.IngredientAddedToPan, stepId, ingredientId, instanceId,
+                IngredientState.AddedToPan, IngredientState.AddedToPan,
+                isCorrect: false, value: OrderValue(CookingOrder.Duplicate));
+            Show($"ใส่{displayNameThai}ไปแล้ว ไม่ต้องใส่ซ้ำ", false);
+            return false;
+        }
+
+        string mistake = order.Evaluate(ingredientId);
+        order.MarkAdded(ingredientId);
+
+        ActionLog.Record(ActionLog.Actions.IngredientAddedToPan, stepId, ingredientId, instanceId,
+            IngredientState.Raw, IngredientState.AddedToPan,
+            isCorrect: mistake == null, value: OrderValue(mistake));
+        objectiveManager.RecordCookingProgress(ingredientId, IngredientState.AddedToPan);
+        ShowAdded(displayNameThai, mistake);
+        return true;
+    }
+
+    // ---------- การคน ----------
+
+    public void RegisterStir()
+    {
+        string stepId = CurrentStepId;
+
+        if (objectiveManager == null || !objectiveManager.CanCookNow(out _))
+        {
+            return;
+        }
+
+        if (!HasAnything)
+        {
+            Show("ยังไม่มีอะไรในกระทะให้คน", false);
+            return;
+        }
+
+        StirCount++;
+        string stirValue;
+
+        if (!order.AromaticsStirred && order.AromaticsInPan)
+        {
+            order.AromaticsStirred = true;
+            stirValue = "aromatics";
+            objectiveManager.RecordCookingProgress(ObjectiveManager.StirAromaticsId, IngredientState.Cooking);
+            Show("คนเครื่องหอมแล้ว ใส่ไก่ได้เลย", true);
+        }
+        else if (!order.FinalStirred && order.Has(ObjectiveManager.KrapowLeafIngredientId))
+        {
+            order.FinalStirred = true;
+            stirValue = "final";
+            objectiveManager.RecordCookingProgress(ObjectiveManager.StirFinalId, IngredientState.Cooking);
+            Show("คนให้เข้ากันแล้ว ปิดเตาได้เลย", true);
+        }
+        else
+        {
+            stirValue = "extra";
+            Show("คนต่อ...", true);
+        }
+
+        ActionLog.Record(ActionLog.Actions.FoodStirred, stepId,
+            value: $"{stirValue};count={StirCount};{HeatValue}");
+    }
+
+    // ---------- ความสุกของไก่ ----------
 
     private void UpdateDoneness(IngredientIdentity ingredient, float value)
     {
@@ -157,17 +299,14 @@ public class PanContents : MonoBehaviour, IMissionResettable
                 return;
             }
 
-            // ให้ ObjectiveManager นับขั้น "ผัดไก่จนสุก" และบันทึก Log
-            IngredientCollectionResult result =
-                objectiveManager.TryAdvanceIngredient(ingredient, IngredientState.Cooked);
-
-            if (result != IngredientCollectionResult.Correct)
+            ingredient.TrySetState(IngredientState.Cooked);
+            LogFoodState(ingredient, current, IngredientState.Cooked, value, true);
+            order.ChickenCooked = true;
+            if (objectiveManager != null)
             {
-                ingredient.TrySetState(IngredientState.Cooked);
-                LogFoodState(ingredient, current, IngredientState.Cooked, value, true);
+                objectiveManager.RecordCookingProgress(ingredient.IngredientId, IngredientState.Cooked);
             }
-
-            Show($"{ingredient.DisplayNameThai}สุกแล้ว อย่าปล่อยไว้นานจนไหม้", true);
+            Show($"{ingredient.DisplayNameThai}สุกแล้ว ปรุงรสต่อได้ อย่าปล่อยไว้นานจนไหม้", true);
             return;
         }
 
@@ -188,8 +327,32 @@ public class PanContents : MonoBehaviour, IMissionResettable
     {
         ActionLog.Record(
             ActionLog.Actions.FoodStateChanged,
-            objectiveManager != null ? objectiveManager.CurrentStepId : string.Empty,
+            CurrentStepId,
             ingredient, before, after, isCorrect, $"heat={value:0}");
+    }
+
+    // ---------- ข้อความ ----------
+
+    private string OrderValue(string mistake)
+    {
+        return mistake == null ? HeatValue : $"order={mistake};{HeatValue}";
+    }
+
+    private void ShowAdded(string displayNameThai, string mistake)
+    {
+        if (mistake == null)
+        {
+            Show($"ใส่{displayNameThai}ลงกระทะ", true);
+        }
+        else
+        {
+            Show($"ใส่{displayNameThai}แล้ว แต่ลำดับยังไม่ถูก: {CookingOrder.DescribeThai(mistake)}", false);
+        }
+    }
+
+    public void ShowHint(string message)
+    {
+        Show(message, false);
     }
 
     private void Show(string message, bool success)
@@ -222,5 +385,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
         inPan.Clear();
         rejected.Clear();
         heat.Clear();
+        order.Clear();
+        StirCount = 0;
     }
 }

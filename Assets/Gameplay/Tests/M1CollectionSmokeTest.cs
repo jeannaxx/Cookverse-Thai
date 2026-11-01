@@ -134,7 +134,7 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         Check(objective.CurrentStepId == ObjectiveManager.CollectKitchenStepId, "ผ่านเมื่อกะเพรา 1 พริก 3 ครบ");
         var ui = FindFirstObjectByType<MissionChecklistUI>();
         var text = ui.GetComponentInChildren<Text>().text;
-        Check(text.Contains("3/3") && text.Contains("วัตถุดิบครบแล้ว"), "UI แสดงพริก 3/3 และวัตถุดิบครบ");
+        Check(text.Contains("■ เก็บใบกะเพราและพริกจากสวน ครบ") && text.Contains("เนื้อไก่ 0/1"), "UI สรุปขั้นสวนครบ และแสดงขั้นครัว");
 
         manager.SelectEnter((IXRSelectInteractor)interactor, (IXRSelectInteractable)grab);
         Check(grab.isSelected, "เตรียมทดสอบ Reset ขณะถือ");

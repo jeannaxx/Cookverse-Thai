@@ -192,7 +192,7 @@ public class MissionChecklistUI : MonoBehaviour
             return;
         }
 
-        // แสดงทุกขั้นที่มีรายการวัตถุดิบ ตั้งแต่ขั้นแรกจนถึงขั้นปัจจุบัน
+        // ขั้นที่ผ่านแล้วสรุปบรรทัดเดียว ขั้นปัจจุบันแสดงรายการวัตถุดิบ (ป้ายไม่ยาวเกินเมื่อถึงขั้นปรุง)
         // ดึงจากตาราง Mission Steps จึงไม่ต้องแก้ UI เมื่อเพิ่มวัตถุดิบใหม่
         var builder = new System.Text.StringBuilder();
         builder.Append("ป้าแสง: ช่วยทำผัดกะเพราให้หน่อยจ้ะ\n");
@@ -204,8 +204,13 @@ public class MissionChecklistUI : MonoBehaviour
         for (int i = 0; i < steps.Count; i++)
         {
             MissionStepDefinition step = steps[i];
+            bool isCurrent = step.stepId == currentStepId;
 
-            if (step.HasRequirements)
+            if (step.HasRequirements && !isCurrent)
+            {
+                builder.Append("■ ").Append(step.titleThai).Append(" ครบ\n");
+            }
+            else if (step.HasRequirements)
             {
                 builder.Append("\n").Append(step.titleThai).Append('\n');
 
@@ -224,11 +229,11 @@ public class MissionChecklistUI : MonoBehaviour
 
                 if (step.IsComplete)
                 {
-                    builder.Append("วัตถุดิบครบแล้ว\n");
+                    builder.Append("ขั้นนี้ครบแล้ว\n");
                 }
             }
 
-            if (step.stepId == currentStepId)
+            if (isCurrent)
             {
                 break;
             }
@@ -245,6 +250,7 @@ public class MissionChecklistUI : MonoBehaviour
         {
             IngredientState.Washed => "ล้าง",
             IngredientState.Cut => "หั่น",
+            IngredientState.AddedToPan => "ใส่",
             IngredientState.Cooked => "ผัดจนสุก: ",
             _ => string.Empty
         };

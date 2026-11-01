@@ -550,6 +550,34 @@ Branch: `feature/gameplay-content-ui`
 
 - `OpenXRPackageSettings.asset` ถูก Unity แก้เอง (fileID เรียงใหม่) ไม่ได้ commit
 
+### 2 พ.ย. 2026 (04:20) — ระบบกระทะ: ลำดับใส่ของ + เครื่องปรุงแยกขวด + การคน (แชท M1)
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- **ขั้นปรุง 3 ขั้น** (`ObjectiveManager`): `cook_aromatics` น้ำมัน·กระเทียม 3·พริก 3·คน → `cook_chicken` ไก่จนสุก → `cook_season` ซอสหอยนางรม·น้ำปลา·น้ำตาล·กะเพรา·คน · แทน `cook_krapow` เดิม · นับแบบไม่บังคับลำดับ (`RecordCookingProgress`) · ตารางในฉากรุ่นเก่าจะถูกแทนด้วยตารางล่าสุดตอนเริ่มเกม
+- `CookingOrder.cs`: ตรวจลำดับตาม GAMEPLAY_CONTENT_V1 — `aromatics_before_oil`, `aromatics_after_chicken`, `chicken_before_oil`, `chicken_before_aromatics`, `chicken_before_stir`, `sauce_before_chicken_cooked`, `krapow_before_chicken_cooked`, `krapow_before_sauce`, `duplicate` · ใส่ผิดลำดับยังใส่ได้ แต่ ActionLog `IngredientAddedToPan` เป็น `isCorrect=false` และ `value=order=<รหัส>;heat=<ระดับ>`
+- `PanContents.cs`: รับเครื่องปรุงจากขวด · การคน (ครั้งแรก = คนเครื่องหอม, หลังใส่กะเพรา = คนให้เข้ากัน, นอกนั้น extra) บันทึก `FoodStirred` · ไก่สุกนับผ่าน `RecordCookingProgress`
+- `SeasoningBottle.cs` (ถือเหนือกระทะ เอียงคว่ำ ≥100° ค้าง 0.4 วิ หรือกดไก = เท 1 ครั้ง มีสายเครื่องปรุง) · `SpatulaStirrer.cs` (ปลายตะหลิวในกระทะสะสม 0.5 ม. = คน 1 ครั้ง) · `GrabbableResetPose.cs` (Reset คืนขวด/ตะหลิว)
+- `M1PanSetupEditor.cs`: เมนู `Setup Pan Cooking (Bottles + Spatula)` สร้างขอบกระทะ ขวด 4 ขวดบนชั้นเครื่องปรุง (ซ่อนขวดตกแต่งเดิม 4 ช่อง ไม่ลบ · ซีอิ๊วดำยังอยู่) ตะหลิวหน้ากระทะ ป้ายสีขวด ข้อความป้ายเตา · รันซ้ำ = ลบของเดิมแล้วสร้างใหม่ · เมนู `Face Station Labels To Player`
+- **แก้ฉาก `GameplayTest_M1`** ด้วยเมนูข้างต้น (แชท M1)
+- `CollectionFeedbackUI.cs`: ป้ายจุดทำงาน**ตัวหนังสือกลับด้าน**มาตลอด (LookRotation หันเข้ากล้อง) → หันออกจากกล้อง · เพิ่มพื้นหลังดำโปร่ง 65% สร้างตอนเริ่มเกม
+- `MissionChecklistUI.cs` (ใช้ร่วมกับ M5): ขั้นที่ผ่านแล้วสรุปบรรทัดเดียว `■ ชื่อขั้น ครบ` · ขั้นปัจจุบันแสดงรายการ · คำกริยา "ใส่" สำหรับ AddedToPan
+
+#### Tested
+
+- `Test Collection Round` ผ่าน **29/29** (ปรับข้อ UI ตามรูปแบบใหม่)
+- `Test Cooking Round` (ใหม่) ผ่าน **31/31**: ทำถูกลำดับครบรอบไม่มีข้อผิดพลาด · คน 2 ครั้ง · เทซ้ำ/เทนอกกระทะไม่นับ · ไก่ก่อนน้ำมัน/กะเพราก่อนไก่สุก/ซอสก่อนไก่สุก ถูกบันทึก · เอียงขวด · Reset
+- ยังไม่ได้ลองจับขวด/ตะหลิวจริงใน Simulator และแว่น
+
+#### Problems / decisions
+
+- ขวดตกแต่งในช่อง `OysterSauce` (ทั้งชุด) และตัว/คอขวดใน `SeasoningSauce` หายจากฉาก (ไม่ทราบที่มา ไม่กระทบเกมเพราะมีขวดจริงแทน)
+- ขวดอยู่บนชั้นเครื่องปรุงข้างตู้เย็น ห่างเตา ~3.7 ม. ต้องถือไปเท ถ้าลองแล้วไม่สะดวก ย้ายไปวางข้างเตาได้
+- ตัวหนังสือป้ายสูงราว 5 ซม. (34 × 0.0015) รอทดสอบในแว่นก่อนลด
+- `OpenXRPackageSettings.asset` ถูก Unity แก้เอง ไม่ได้ commit
+
 ---
 
 ## Daily entry template

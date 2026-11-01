@@ -23,11 +23,23 @@ public class ObjectiveManager : MonoBehaviour
     public const string CollectKitchenStepId = "collect_kitchen";
     public const string WashStepId = "wash_ingredients";
     public const string PrepareStepId = "prepare_ingredients";
-    public const string CookStepId = "cook_krapow";
+    // ขั้นปรุงแบ่ง 3 ขั้นตาม "ลำดับการปรุงที่ระบบกฎตรวจ" ใน GAMEPLAY_CONTENT_V1
+    // วัตถุดิบที่ใส่ผิดลำดับยังนับให้ขั้นของมัน (CookingOrder บันทึกข้อผิดพลาดแยก)
+    public const string CookAromaticsStepId = "cook_aromatics";
+    public const string CookChickenStepId = "cook_chicken";
+    public const string CookSeasonStepId = "cook_season";
+    public const string CookStepId = CookChickenStepId; // ชื่อเดิม คงไว้ให้โค้ดเก่าใช้ได้
     public const string KrapowLeafIngredientId = "krapow_leaf";
     public const string ChiliIngredientId = "chili";
     public const string ChickenIngredientId = "chicken";
     public const string GarlicIngredientId = "garlic";
+    public const string CookingOilIngredientId = "cooking_oil";
+    public const string OysterSauceIngredientId = "oyster_sauce";
+    public const string FishSauceIngredientId = "fish_sauce";
+    public const string SugarIngredientId = "sugar";
+    // การคนนับเป็นรายการในตารางเหมือนวัตถุดิบ (สถานะ Cooking) เพื่อให้ Checklist แสดงได้
+    public const string StirAromaticsId = "stir_aromatics";
+    public const string StirFinalId = "stir_final";
     public const string LegacyKrapowName = "Krapow";
     public const string LegacyChiliName = "Chili";
 
@@ -70,6 +82,15 @@ public class ObjectiveManager : MonoBehaviour
         {
             Debug.LogWarning(
                 "[เป้าหมาย] ตารางขั้นภารกิจว่าง จึงใช้ค่าเริ่มต้นผัดกะเพราไก่",
+                this);
+            steps = CreateDefaultSteps();
+        }
+        else if (FindStep(CookAromaticsStepId) == null)
+        {
+            // ฉากที่บันทึกตารางรุ่นก่อนมีขั้นปรุง (cook_krapow) ยังเล่นได้
+            // รัน Tools > Cookverse Thai > M1 > Setup Pan Cooking เพื่อบันทึกตารางใหม่ลงฉาก
+            Debug.LogWarning(
+                "[เป้าหมาย] ตารางขั้นภารกิจในฉากเป็นรุ่นเก่า จึงใช้ตารางล่าสุด (มีขั้นปรุง 3 ขั้น)",
                 this);
             steps = CreateDefaultSteps();
         }
@@ -154,16 +175,86 @@ public class ObjectiveManager : MonoBehaviour
                     "กลีบ",
                     3,
                     IngredientState.Cut)),
+            // ปรุง: น้ำมัน → กระเทียม+พริก → คน → ไก่จนสุก → ซอส/น้ำปลา/น้ำตาล → กะเพรา → คน
             new MissionStepDefinition(
-                CookStepId,
-                "ผัดไก่ในกระทะจนสุก",
+                CookAromaticsStepId,
+                "เปิดไฟ ผัดเครื่องหอม",
+                new IngredientRequirement(
+                    CookingOilIngredientId,
+                    string.Empty,
+                    "น้ำมัน",
+                    "ครั้ง",
+                    1,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    GarlicIngredientId,
+                    string.Empty,
+                    "กระเทียม",
+                    "กลีบ",
+                    3,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    ChiliIngredientId,
+                    LegacyChiliName,
+                    "พริก",
+                    "เม็ด",
+                    3,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    StirAromaticsId,
+                    string.Empty,
+                    "คนเครื่องหอม",
+                    "ครั้ง",
+                    1,
+                    IngredientState.Cooking)),
+            new MissionStepDefinition(
+                CookChickenStepId,
+                "ใส่ไก่ ผัดจนสุก",
                 new IngredientRequirement(
                     ChickenIngredientId,
                     string.Empty,
                     "เนื้อไก่",
                     "ชิ้น",
                     1,
-                    IngredientState.Cooked))
+                    IngredientState.Cooked)),
+            new MissionStepDefinition(
+                CookSeasonStepId,
+                "ปรุงรส แล้วใส่ใบกะเพรา",
+                new IngredientRequirement(
+                    OysterSauceIngredientId,
+                    string.Empty,
+                    "ซอสหอยนางรม",
+                    "ครั้ง",
+                    1,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    FishSauceIngredientId,
+                    string.Empty,
+                    "น้ำปลา",
+                    "ครั้ง",
+                    1,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    SugarIngredientId,
+                    string.Empty,
+                    "น้ำตาล",
+                    "ครั้ง",
+                    1,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    KrapowLeafIngredientId,
+                    LegacyKrapowName,
+                    "ใบกะเพรา",
+                    "กำ",
+                    1,
+                    IngredientState.AddedToPan),
+                new IngredientRequirement(
+                    StirFinalId,
+                    string.Empty,
+                    "คนให้เข้ากัน",
+                    "ครั้ง",
+                    1,
+                    IngredientState.Cooking))
         };
     }
 
@@ -435,14 +526,91 @@ public class ObjectiveManager : MonoBehaviour
         return IngredientCollectionResult.Correct;
     }
 
-    // ใส่ลงกระทะได้เฉพาะตอนถึงขั้นปรุง และวัตถุดิบต้องเตรียมแล้ว (ล้างหรือหั่น)
-    public bool CanAddToPan(IngredientIdentity ingredient, out string reason)
+    public static bool IsCookingStep(string stepId)
+    {
+        return stepId == CookAromaticsStepId ||
+               stepId == CookChickenStepId ||
+               stepId == CookSeasonStepId;
+    }
+
+    // ใส่ของลงกระทะ/เทเครื่องปรุง/คน ได้ตั้งแต่ถึงขั้นปรุงขั้นแรก
+    public bool CanCookNow(out string reason)
+    {
+        if (!missionAccepted || !IsCookingStep(currentStepId))
+        {
+            reason = "ยังไม่ถึงขั้นปรุง เตรียมวัตถุดิบให้ครบก่อน";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    // นับความคืบหน้าขั้นปรุง ไม่บังคับลำดับ: หา requirement ในขั้นปรุงปัจจุบันและขั้นปรุงถัดไป
+    // เช่น ใส่ซอสก่อนไก่สุก ยังนับให้ขั้นปรุงรส (ข้อผิดพลาดลำดับบันทึกโดย CookingOrder)
+    // ไม่บันทึก ActionLog ที่นี่ ผู้เรียก (PanContents) บันทึกเหตุการณ์เอง
+    public bool RecordCookingProgress(string ingredientId, IngredientState state)
+    {
+        if (!missionAccepted || !IsCookingStep(currentStepId) || steps == null)
+        {
+            return false;
+        }
+
+        int start = steps.FindIndex(s => s.stepId == currentStepId);
+
+        for (int i = Mathf.Max(0, start); i < steps.Count; i++)
+        {
+            MissionStepDefinition step = steps[i];
+
+            if (!IsCookingStep(step.stepId))
+            {
+                break;
+            }
+
+            IngredientRequirement requirement = step.FindRequirement(ingredientId, state);
+
+            if (requirement == null || requirement.IsComplete)
+            {
+                continue;
+            }
+
+            requirement.currentCount++;
+            Debug.Log(
+                $"[เป้าหมาย] {step.titleThai}: {requirement.displayNameThai} " +
+                $"{requirement.currentCount}/{requirement.requiredCount} {requirement.unitThai}",
+                this);
+
+            AdvanceWhileComplete();
+            NotifyObjectiveChanged();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void AdvanceWhileComplete()
     {
         MissionStepDefinition step = CurrentStep;
 
-        if (!missionAccepted || step == null || !step.HasRequirementsFor(IngredientState.Cooked))
+        while (step != null && step.IsComplete)
         {
-            reason = "ยังไม่ถึงขั้นปรุง เตรียมวัตถุดิบให้ครบก่อน";
+            MissionStepDefinition next = GetNextStep(step.stepId);
+            AdvanceFrom(step);
+
+            if (next == null)
+            {
+                break;
+            }
+
+            step = next;
+        }
+    }
+
+    // ใส่ลงกระทะได้เฉพาะตอนถึงขั้นปรุง และวัตถุดิบต้องเตรียมแล้ว (ล้างหรือหั่น)
+    public bool CanAddToPan(IngredientIdentity ingredient, out string reason)
+    {
+        if (!CanCookNow(out reason))
+        {
             return false;
         }
 

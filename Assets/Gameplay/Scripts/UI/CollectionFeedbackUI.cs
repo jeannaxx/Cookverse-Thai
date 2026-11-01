@@ -21,7 +21,13 @@ public class CollectionFeedbackUI : MonoBehaviour
     [SerializeField] private Color errorColor =
         new Color(1f, 0.35f, 0.35f, 1f);
 
+    [Header("Background (อ่านง่ายบนผนังสีอ่อน)")]
+    [SerializeField] private Color backgroundColor =
+        new Color(0f, 0f, 0f, 0.65f);
+    [SerializeField] private Vector2 backgroundPadding = new Vector2(28f, 16f);
+
     private Coroutine hideRoutine;
+    private RectTransform background;
 
     public void Configure(Text textComponent)
     {
@@ -31,6 +37,7 @@ public class CollectionFeedbackUI : MonoBehaviour
     private void Awake()
     {
         EnsureThaiFont();
+        EnsureBackground();
         ShowMessage(initialMessage, Color.white, false);
     }
 
@@ -44,9 +51,11 @@ public class CollectionFeedbackUI : MonoBehaviour
         Vector3 directionToCamera =
             Camera.main.transform.position - transform.position;
 
+        // Canvas แบบ World Space อ่านถูกด้านเมื่อด้านหน้า (+Z) หันออกจากผู้มอง
+        // จึงหันไปทางตรงข้ามกับกล้อง (ถ้าหันเข้าหากล้อง ตัวหนังสือจะกลับด้าน)
         if (directionToCamera.sqrMagnitude > 0.001f)
         {
-            transform.rotation = Quaternion.LookRotation(directionToCamera);
+            transform.rotation = Quaternion.LookRotation(-directionToCamera, Vector3.up);
         }
     }
 
@@ -122,6 +131,7 @@ public class CollectionFeedbackUI : MonoBehaviour
         feedbackText.text = message;
         feedbackText.color = color;
         feedbackText.gameObject.SetActive(true);
+        FitBackground();
 
         if (hideRoutine != null)
         {
@@ -144,7 +154,56 @@ public class CollectionFeedbackUI : MonoBehaviour
             feedbackText.gameObject.SetActive(false);
         }
 
+        if (background != null)
+        {
+            background.gameObject.SetActive(false);
+        }
+
         hideRoutine = null;
+    }
+
+    // พื้นหลังสร้างตอนเริ่มเกม ไม่ต้องแก้ Prefab/ฉาก · วางก่อนตัวหนังสือจึงอยู่ด้านหลัง
+    private void EnsureBackground()
+    {
+        if (feedbackText == null || background != null)
+        {
+            return;
+        }
+
+        var backgroundObject = new GameObject("FeedbackBackground", typeof(RectTransform), typeof(Image));
+        background = (RectTransform)backgroundObject.transform;
+        background.SetParent(feedbackText.transform.parent, false);
+        background.SetSiblingIndex(feedbackText.transform.GetSiblingIndex());
+
+        var image = backgroundObject.GetComponent<Image>();
+        image.color = backgroundColor;
+        image.raycastTarget = false;
+    }
+
+    // ปรับขนาดพื้นหลังให้พอดีกับข้อความปัจจุบัน
+    private void FitBackground()
+    {
+        if (background == null || feedbackText == null)
+        {
+            return;
+        }
+
+        RectTransform textRect = feedbackText.rectTransform;
+        float width = textRect.rect.width;
+        float height = Mathf.Max(feedbackText.preferredHeight, feedbackText.fontSize * 1.2f);
+        float textWidth = Mathf.Min(feedbackText.preferredWidth, width > 1f ? width : feedbackText.preferredWidth);
+
+        background.anchorMin = textRect.anchorMin;
+        background.anchorMax = textRect.anchorMax;
+        background.pivot = new Vector2(0.5f, 0.5f);
+        background.anchoredPosition = textRect.anchoredPosition +
+            new Vector2((0.5f - textRect.pivot.x) * width, (0.5f - textRect.pivot.y) * textRect.rect.height);
+        background.sizeDelta = Vector2.zero;
+        background.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth + backgroundPadding.x * 2f);
+        background.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height + backgroundPadding.y * 2f);
+        background.localRotation = Quaternion.identity;
+        background.localScale = Vector3.one;
+        background.gameObject.SetActive(true);
     }
 
     private void EnsureThaiFont()

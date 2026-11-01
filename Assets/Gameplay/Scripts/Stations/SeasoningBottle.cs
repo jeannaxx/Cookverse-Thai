@@ -1,0 +1,188 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
+// ขวดเครื่องปรุง 1 ขวด = 1 ชนิด (น้ำมัน ซอสหอยนางรม น้ำปลา น้ำตาล)
+// เทได้ 2 วิธี เมื่อถือปากขวดอยู่เหนือกระทะ:
+//   (1) เอียงขวดคว่ำเกิน pourTiltAngle ค้าง tiltHoldSeconds วินาที
+//   (2) กดไก (Activate) ขณะถือขวด
+// เท 1 ครั้ง = 1 Portion · ต้องตั้งขวดกลับก่อนจึงเทแบบเอียงได้อีก (กันนับรัวตอนเอียงค้าง)
+[RequireComponent(typeof(XRGrabInteractable))]
+public class SeasoningBottle : MonoBehaviour
+{
+    [Header("Seasoning")]
+    [SerializeField] private string ingredientId = ObjectiveManager.FishSauceIngredientId;
+    [SerializeField] private string displayNameThai = "น้ำปลา";
+
+    [Header("References")]
+    [SerializeField] private PanContents pan;
+    [SerializeField] private Transform spout;
+    [Tooltip("แท่งสายเครื่องปรุงที่โผล่ใต้ปากขวดตอนเท (ไม่บังคับ)")]
+    [SerializeField] private Transform pourStream;
+
+    [Header("Pouring")]
+    [SerializeField] private float pourTiltAngle = 100f;
+    [SerializeField] private float uprightResetAngle = 60f;
+    [SerializeField] private float tiltHoldSeconds = 0.4f;
+    [SerializeField] private float streamSeconds = 0.6f;
+
+    private XRGrabInteractable grab;
+    private float tiltTimer;
+    private bool pouredThisTilt;
+    private float streamHideTime;
+
+    public string IngredientId => ingredientId;
+    public string DisplayNameThai => displayNameThai;
+    public string InstanceId => $"{ingredientId}-bottle";
+    public Vector3 SpoutPosition =>
+        spout != null ? spout.position : transform.position + transform.up * 0.12f;
+
+    public void Configure(
+        string id,
+        string nameThai,
+        PanContents targetPan,
+        Transform spoutPoint,
+        Transform stream)
+    {
+        ingredientId = id;
+        displayNameThai = nameThai;
+        pan = targetPan;
+        spout = spoutPoint;
+        pourStream = stream;
+    }
+
+    private void Awake()
+    {
+        grab = GetComponent<XRGrabInteractable>();
+
+        if (pourStream != null)
+        {
+            pourStream.gameObject.SetActive(false);
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (grab == null)
+        {
+            grab = GetComponent<XRGrabInteractable>();
+        }
+        grab.activated.AddListener(OnActivated);
+        grab.selectExited.AddListener(OnReleased);
+    }
+
+    private void OnDisable()
+    {
+        grab.activated.RemoveListener(OnActivated);
+        grab.selectExited.RemoveListener(OnReleased);
+    }
+
+    private void OnActivated(ActivateEventArgs args)
+    {
+        TryPour(true);
+    }
+
+    private void OnReleased(SelectExitEventArgs args)
+    {
+        tiltTimer = 0f;
+        pouredThisTilt = false;
+    }
+
+    private void Update()
+    {
+        UpdateStream();
+
+        if (!grab.isSelected)
+        {
+            tiltTimer = 0f;
+            pouredThisTilt = false;
+            return;
+        }
+
+        float tilt = Vector3.Angle(transform.up, Vector3.up);
+        bool abovePan = pan != null && pan.IsAbovePan(SpoutPosition);
+        UpdateTilt(tilt, abovePan, Time.deltaTime);
+    }
+
+    // แยกจาก Update เพื่อให้ชุดทดสอบเรียกได้โดยไม่ต้องจับขวดจริง
+    public bool UpdateTilt(float tiltDegrees, bool abovePan, float deltaTime)
+    {
+        if (tiltDegrees <= uprightResetAngle)
+        {
+            pouredThisTilt = false;
+            tiltTimer = 0f;
+            return false;
+        }
+
+        if (pouredThisTilt || tiltDegrees < pourTiltAngle || !abovePan)
+        {
+            tiltTimer = 0f;
+            return false;
+        }
+
+        tiltTimer += deltaTime;
+
+        if (tiltTimer < tiltHoldSeconds)
+        {
+            return false;
+        }
+
+        pouredThisTilt = true;
+        tiltTimer = 0f;
+        return TryPour(false);
+    }
+
+    public bool TryPour(bool fromButton)
+    {
+        if (pan == null)
+        {
+            Debug.LogWarning($"[เครื่องปรุง] ขวด{displayNameThai} ยังไม่ได้ผูกกับกระทะ", this);
+            return false;
+        }
+
+        if (!pan.IsAbovePan(SpoutPosition))
+        {
+            if (fromButton)
+            {
+                pan.ShowHint($"ถือขวด{displayNameThai}ให้อยู่เหนือกระทะก่อนเท");
+            }
+
+            return false;
+        }
+
+        ShowStream();
+        return pan.AddSeasoning(ingredientId, displayNameThai, InstanceId);
+    }
+
+    private void ShowStream()
+    {
+        if (pourStream == null)
+        {
+            return;
+        }
+
+        pourStream.gameObject.SetActive(true);
+        streamHideTime = Time.time + streamSeconds;
+        UpdateStream();
+    }
+
+    // สายเครื่องปรุงตั้งตรงลงพื้นเสมอ ไม่ว่าขวดเอียงแค่ไหน
+    private void UpdateStream()
+    {
+        if (pourStream == null || !pourStream.gameObject.activeSelf)
+        {
+            return;
+        }
+
+        if (Time.time >= streamHideTime)
+        {
+            pourStream.gameObject.SetActive(false);
+            return;
+        }
+
+        float halfLength = pourStream.lossyScale.y;
+        pourStream.SetPositionAndRotation(
+            SpoutPosition + Vector3.down * halfLength,
+            Quaternion.identity);
+    }
+}
