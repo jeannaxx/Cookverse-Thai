@@ -152,6 +152,33 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         Move(leaf, target);
         yield return Tick();
         Check(objective.CollectedKrapowCount == 1, "เริ่มรอบใหม่แล้วนับชิ้นเดิมได้");
+
+        // ตู้เย็น: จับบานเพื่อเปิด ตอนเปิดบานไม่ขวาง Ray ปิดได้ที่ด้ามจับ กันกดซ้ำ
+        var fridge = FindAnyObjectByType<FridgeDoor>();
+        Check(fridge != null && fridge.DoorInteractable != null && fridge.HandleInteractable != null, "ตู้เย็นมีบานและด้ามจับ");
+        if (fridge != null && fridge.DoorInteractable != null && fridge.HandleInteractable != null)
+        {
+            var hand = (IXRSelectInteractor)interactor;
+            var doorBody = (IXRSelectInteractable)fridge.DoorInteractable;
+            var doorHandle = (IXRSelectInteractable)fridge.HandleInteractable;
+            fridge.ResetForMission();
+            yield return new WaitForSeconds(0.7f);
+            Check(!fridge.IsOpen && fridge.BodyBlocksRay, "ตู้เย็นเริ่มต้นปิด");
+            manager.SelectEnter(hand, doorBody); manager.SelectExit(hand, doorBody);
+            Check(fridge.IsOpen && !fridge.BodyBlocksRay, "จับบานแล้วเปิด และบานไม่ขวาง Ray");
+            yield return new WaitForSeconds(0.7f);
+            manager.SelectEnter(hand, doorBody); manager.SelectExit(hand, doorBody);
+            Check(fridge.IsOpen, "จับโดนบานตอนเปิดอยู่ ประตูไม่ปิด");
+            manager.SelectEnter(hand, doorHandle); manager.SelectExit(hand, doorHandle);
+            Check(!fridge.IsOpen && fridge.BodyBlocksRay, "จับด้ามจับแล้วปิด");
+            manager.SelectEnter(hand, doorHandle); manager.SelectExit(hand, doorHandle);
+            Check(!fridge.IsOpen, "จับซ้ำภายใน 0.5 วินาทีไม่สลับ");
+            yield return new WaitForSeconds(0.7f);
+            manager.SelectEnter(hand, doorHandle); manager.SelectExit(hand, doorHandle);
+            Check(fridge.IsOpen, "ด้ามจับเปิดประตูได้");
+            fridge.ResetForMission();
+            Check(!fridge.IsOpen && fridge.BodyBlocksRay, "Reset ปิดประตูและบานกลับมาชน");
+        }
     }
 }
 #endif

@@ -532,6 +532,24 @@ Branch: `feature/webxr` (`4bf8ca4`) และ cherry-pick เข้า `feature/
 - พบการสลับ branch ไปมาตอน 00:00–00:01 (ไม่ได้มาจากแชท M1) → ตั้งกติกาทำทีละแชทและเช็ก branch ก่อนแก้
 - บน `feature/webxr` ยังมี `Assets/MainVR.unity` และ `New Folder.meta` (ลบแค่บน branch M1 ใน `d4c339c`) จะหายเมื่อ merge
 
+### 2 พ.ย. 2026 (03:40) — แก้ประตูตู้เย็นเปิด/ปิดเองตอนหยิบไก่ (แชท M1)
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- `FridgeDoor.cs`: ประตูปิด → จับตรงไหนของบานก็เปิด · ประตูเปิด → ปิด Collider ของบานทันที (Ray/มือผ่านไปหยิบไก่ได้ จับโดนบานไม่ปิด) · ปิดได้ที่**ด้ามจับสีส้ม** ขอบนอกด้านหน้า (สร้างอัตโนมัติตอนเริ่มเกม เป็นลูกของ Hinge พื้นที่จับใหญ่กว่าตัวด้าม) · กันกดซ้ำ 0.5 วินาที · Reset ปิดประตูและคืน Collider
+- ไม่แก้ไฟล์ฉาก (`handleInteractable` ว่าง = สร้างเอง) · กำหนดด้ามจับเองใน Inspector ได้ถ้าต้องการ
+
+#### Tested
+
+- `Test Collection Round` ผ่าน **29/29** (เพิ่มข้อตู้เย็น 8 ข้อ: มีด้ามจับ · เริ่มปิด · จับบานแล้วเปิดและไม่ขวาง Ray · จับบานซ้ำไม่ปิด · ด้ามจับปิด · กันกดซ้ำ · ด้ามจับเปิด · Reset)
+- ยังไม่ทดสอบในแว่น (WebXR) → เช็กลิสต์ C7
+
+#### Problems / decisions
+
+- `OpenXRPackageSettings.asset` ถูก Unity แก้เอง (fileID เรียงใหม่) ไม่ได้ commit
+
 ---
 
 ## Daily entry template
