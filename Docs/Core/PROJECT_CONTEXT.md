@@ -109,9 +109,9 @@ Assets/Gameplay
 | Branch | การใช้งาน |
 |---|---|
 | `feature/gameplay-content-ui` | **branch ทำงานหลัก** ทั้งระบบ Gameplay และการรวมเข้า `MainVR` |
+| `feature/xr-webxr-integration` | **M5**: XR / WebXR / แว่น (`Assets/XR-Web/`, WebXR Build) · ใช้แทน `feature/webxr` ตั้งแต่ 2 พ.ย. 2026 |
 | `develop` | merge เข้ามาทุกครั้งที่ระบบหนึ่งผ่านการทดสอบ |
 | `main` | เฉพาะเวอร์ชันที่พร้อมนำเสนอ |
-| `feature/xr-webxr-integration` | ไม่ใช้พัฒนาต่อแล้ว งานฉากทั้งหมดรวมอยู่ใน `develop` |
 | `legacy` | โปรเจกต์ก่อนเปลี่ยนมาใช้ VR Template เก็บไว้อ้างอิงเท่านั้น |
 
 ## 6. สถานะปัจจุบัน (22 ต.ค. 2026)

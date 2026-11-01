@@ -2,9 +2,29 @@ using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.Inputs;
 
 public class MissionChecklistUI : MonoBehaviour
 {
+    public enum PanelMode
+    {
+        Wrist,  // ติดข้อมือซ้าย ขึ้นเมื่อหันหลังมือมาดู (ค่าเริ่มต้น ตั้งแต่ 2 พ.ย.)
+        Follow  // ลอยหน้าแบบหน่วง (แบบเดิม)
+    }
+
+    // M5 (2 พ.ย.): ป้ายติดข้อมือซ้ายแบบนาฬิกา ไม่บังสายตา ไม่จมพื้น/ผนัง
+    // ถ้าหา Controller ซ้ายไม่เจอ (เช่น โหมด Hand Tracking) จะกลับไปใช้แบบ Follow เอง
+    [Header("Panel Mode")]
+    [SerializeField] private PanelMode panelMode = PanelMode.Wrist;
+
+    [Header("Wrist Panel (Left Controller)")]
+    [SerializeField] private float wristScale = 0.0003f;                         // 560 px → กว้าง ~17 ซม.
+    [SerializeField] private Vector3 wristLocalOffset = new Vector3(-0.05f, 0.02f, -0.09f); // จาก Controller ซ้าย: ด้านหลังมือ ค่อนไปทางข้อมือ (ม.)
+    [SerializeField] private Vector3 wristFaceLocal = new Vector3(-1f, 0.3f, 0f);           // ด้านหลังมือซ้าย (ทิศที่หันหาหน้าตอนดูนาฬิกา)
+    [SerializeField] private float showDot = 0.45f;          // หันหลังมือเข้าหาหน้ามากกว่านี้ → ป้ายขึ้น
+    [SerializeField] private float hideDot = 0.3f;           // น้อยกว่านี้ → ป้ายหาย (กันกะพริบ)
+    [SerializeField] private float showOnChangeSeconds = 4f; // ภารกิจเปลี่ยนขั้น → ป้ายขึ้นเองชั่วคราว
+
     [Header("Required References")]
     [SerializeField] private ObjectiveManager objectiveManager;
     [SerializeField] private Text checklistText;
@@ -36,6 +56,14 @@ public class MissionChecklistUI : MonoBehaviour
     private bool searchedOrigin;
     private Material onTopMaterial;
     private readonly RaycastHit[] rayHits = new RaycastHit[16];
+
+    private XRInputModalityManager modality;
+    private bool searchedModality;
+    private Transform fallbackLeftController;
+    private CanvasGroup canvasGroup;
+    private Canvas panelCanvas;
+    private bool wristVisible;
+    private float forceShowUntil;
 
     private bool lazyFollow;
     private bool following;
@@ -100,6 +128,22 @@ public class MissionChecklistUI : MonoBehaviour
             ApplyOnTopMaterial();
         }
 
+        panelCanvas = canvas;
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        if (panelMode == PanelMode.Wrist && scaler != null)
+        {
+            scaler.dynamicPixelsPerUnit = 8f; // ป้ายเล็กอยู่ใกล้ตา ต้องคมกว่าเดิม
+        }
+
+        // ตอนเริ่มเกมโชว์บนข้อมือสักพัก ให้ผู้เล่นรู้ว่าป้ายอยู่ตรงนี้
+        forceShowUntil = Time.time + 6f;
+        RefreshChecklist();
+
         lazyFollow = true;
         Transform head = Head();
         if (head != null)
@@ -122,6 +166,15 @@ public class MissionChecklistUI : MonoBehaviour
     {
         if (lazyFollow)
         {
+            Transform wrist = panelMode == PanelMode.Wrist ? LeftController() : null;
+            if (wrist != null)
+            {
+                WristUpdate(wrist);
+                return;
+            }
+
+            transform.localScale = Vector3.one * panelScale;
+            SetPanelAlpha(1f, true);
             LazyFollow();
             return;
         }
@@ -256,6 +309,87 @@ public class MissionChecklistUI : MonoBehaviour
         return hitDistance < float.MaxValue;
     }
 
+    // Controller ซ้ายที่กำลังใช้งาน (จาก XRInputModalityManager ของ XR Origin)
+    // คืน null ถ้าไม่ได้ถือ Controller (เช่น Hand Tracking) → ใช้แบบ Follow แทน
+    private Transform LeftController()
+    {
+        if (!searchedModality)
+        {
+            searchedModality = true;
+            modality = FindAnyObjectByType<XRInputModalityManager>();
+
+            if (modality == null)
+            {
+                Head();
+                if (xrOrigin != null)
+                {
+                    foreach (Transform t in xrOrigin.GetComponentsInChildren<Transform>(true))
+                    {
+                        if (t.name == "Left Controller")
+                        {
+                            fallbackLeftController = t;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        GameObject left = modality != null ? modality.leftController : null;
+        if (left != null)
+        {
+            return left.activeInHierarchy ? left.transform : null;
+        }
+
+        return fallbackLeftController != null && fallbackLeftController.gameObject.activeInHierarchy
+            ? fallbackLeftController
+            : null;
+    }
+
+    private void WristUpdate(Transform wrist)
+    {
+        transform.localScale = Vector3.one * wristScale;
+
+        Transform head = Head();
+        Vector3 position = wrist.TransformPoint(wristLocalOffset);
+        transform.position = position;
+
+        bool show = true;
+        if (head != null)
+        {
+            Vector3 away = position - head.position;
+            if (away.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(away, head.up);
+            }
+
+            if (Time.time >= forceShowUntil)
+            {
+                Vector3 face = wrist.TransformDirection(wristFaceLocal.normalized);
+                float facing = Vector3.Dot(face, (head.position - position).normalized);
+                show = wristVisible ? facing > hideDot : facing > showDot;
+            }
+        }
+
+        wristVisible = show;
+        SetPanelAlpha(show ? 1f : 0f, false);
+    }
+
+    private void SetPanelAlpha(float target, bool instant)
+    {
+        if (canvasGroup == null)
+        {
+            return;
+        }
+
+        canvasGroup.alpha = instant ? target : Mathf.MoveTowards(canvasGroup.alpha, target, Time.deltaTime * 6f);
+
+        if (panelCanvas != null)
+        {
+            panelCanvas.enabled = canvasGroup.alpha > 0.01f || target > 0f;
+        }
+    }
+
     // กล้องของผู้เล่นจาก XR Origin (กล้องที่ถูก Track จริง) ถ้าไม่มีค่อยใช้ Camera.main
     private Transform Head()
     {
@@ -317,11 +451,43 @@ public class MissionChecklistUI : MonoBehaviour
             return;
         }
 
+        // ภารกิจเปลี่ยน → ป้ายบนข้อมือขึ้นเองชั่วคราว
+        if (panelMode == PanelMode.Wrist && lazyFollow)
+        {
+            forceShowUntil = Mathf.Max(forceShowUntil, Time.time + showOnChangeSeconds);
+        }
+
         if (objectiveManager == null || !objectiveManager.MissionAccepted)
         {
-            checklistText.text =
-                "ภารกิจ: ผัดกะเพรา\n\n" +
-                "เดินไปหาป้าแสงเพื่อรับภารกิจ";
+            checklistText.text = panelMode == PanelMode.Wrist
+                ? "ภารกิจ: ผัดกะเพรา\n\nเดินไปหาป้าแสงเพื่อรับภารกิจ\n(หันหลังมือซ้ายมาดูภารกิจได้ทุกเมื่อ)"
+                : "ภารกิจ: ผัดกะเพรา\n\n" +
+                  "เดินไปหาป้าแสงเพื่อรับภารกิจ";
+            return;
+        }
+
+        // ป้ายข้อมือเล็ก แสดงเฉพาะขั้นปัจจุบัน
+        if (panelMode == PanelMode.Wrist && objectiveManager.CurrentStep != null)
+        {
+            MissionStepDefinition current = objectiveManager.CurrentStep;
+            var compact = new System.Text.StringBuilder();
+            compact.Append(current.titleThai).Append('\n');
+
+            if (current.HasRequirements)
+            {
+                foreach (IngredientRequirement requirement in current.requirements)
+                {
+                    compact
+                        .Append('\n')
+                        .Append(requirement.IsComplete ? "■ " : "• ")
+                        .Append(VerbFor(requirement.targetState))
+                        .Append(requirement.displayNameThai).Append(' ')
+                        .Append(requirement.currentCount).Append('/')
+                        .Append(requirement.requiredCount);
+                }
+            }
+
+            checklistText.text = compact.ToString().TrimEnd();
             return;
         }
 
