@@ -580,6 +580,75 @@ Branch: `feature/gameplay-content-ui`
 
 ---
 
+### 2 พ.ย. 2026 — แก้ป้ายภารกิจจมพื้นบน WebXR (แชท M5)
+
+Branch: `feature/webxr` → commit `7bbd6ff Edit-UI` · ต่อมาย้ายเข้า `feature/xr-webxr-integration` (ดูด้านล่าง)
+
+#### Completed
+
+- `Assets/XR-Web/Scripts/WebXRHeightFix.cs`: เดิมตั้ง Camera Y Offset = 0 ตั้งแต่เปิดเว็บ → หน้าเว็บก่อนเข้า VR กล้องอยู่ที่พื้น · ใหม่: ก่อนเข้า VR คง Offset ปกติ (1.6 ม.) และตั้งเป็น 0 **เมื่อแว่นเริ่มส่งความสูงหัวมา** (กล้องเทียบ Camera Offset ≥ 0.3 ม.) · เปลี่ยนเป็น MonoBehaviour ที่สร้างเองตอนเริ่มเกม (เฉพาะ WebGL) · ไม่เรียก API WebXR Export เพราะแพ็กเกจ `autoReferenced: false`
+- `Assets/Gameplay/Scripts/UI/MissionChecklistUI.cs` (**ไฟล์ร่วมกับ M1 — แก้โดยแชท M5**):
+  - ใช้กล้องจาก `XROrigin.Camera` (ถ้าไม่มีค่อยใช้ `Camera.main`)
+  - กันขอบล่างป้ายไม่ให้ต่ำกว่าพื้นที่ยืน (`minHeightAboveFloor` 0.15 ม. เทียบตำแหน่ง XR Origin)
+  - `drawOnTop`: วัสดุ UI แบบ ZTest Always ป้ายไม่ถูกพื้น ผนัง ตู้ ตัดตัวหนังสือ
+  - ค่าตำแหน่งเดิม (ระยะ 1.1 ม. ต่ำกว่าสายตา 0.2 ม. เยื้องซ้าย 0.3 ม.) ไม่เปลี่ยน
+  - **รอบ 2 (2 พ.ย. 03:00):** ใน Simulator เห็นว่า `drawOnTop` ทำให้ป้ายวาดทับ Controller/มือ → ปิด `drawOnTop` เป็นค่าเริ่มต้น แล้วเพิ่ม `avoidWalls`: ยิง Raycast จากหัวไปป้าย ถ้าชนวัตถุที่ไม่มี Rigidbody (ผนัง เคาน์เตอร์ ตู้) ดึงป้ายมาไว้หน้าวัตถุ (ใกล้สุด `minPanelDistance` 0.45 ม.) ไม่นับของที่หยิบได้และตัวผู้เล่น
+  - ตัดสินใจ: ไม่ใช้ป้ายมุมจอ (HUD) แบบเกมจอแบน เพราะมุมจอในแว่นคือขอบเลนส์ เบลอ และใน APK Overlay ไม่แสดง · ทางเลือกในอนาคต: ป้ายติดข้อมือซ้าย / กระดานภารกิจในครัว
+  - **รอบ 3 (2 พ.ย. 03:25) — ป้ายติดข้อมือซ้าย (ผู้ใช้เลือกแบบ 2 เพราะแบบลอยหน้ายังไม่สบายตา):** `panelMode` = `Wrist` (ค่าเริ่มต้น) / `Follow` (แบบเดิม)
+    - หา Controller ซ้ายจาก `XRInputModalityManager.leftController` ตอนรันเกม (ถ้าไม่มี ค้นชื่อ `Left Controller` ใต้ XR Origin) · **ไม่แก้ฉาก**
+    - ป้ายอยู่ที่ `wristLocalOffset` ของ Controller ซ้าย หันหาหน้าเสมอ ขนาด `wristScale` 0.0003 (กว้าง ~17 ซม.) · ขึ้นเมื่อหลังมือซ้าย (`wristFaceLocal` = −X) หันเข้าหาหน้า (dot > 0.45 / หายเมื่อ < 0.3) ค่อย ๆ จางด้วย `CanvasGroup`
+    - ขึ้นเองชั่วคราว: 6 วิแรกของเกม และ 4 วิทุกครั้งที่ภารกิจเปลี่ยน (`showOnChangeSeconds`)
+    - โหมดข้อมือแสดงเฉพาะ**ขั้นปัจจุบัน** · ก่อนรับภารกิจมีบรรทัดบอก "หันหลังมือซ้ายมาดูภารกิจได้ทุกเมื่อ"
+    - ไม่ได้ถือ Controller (Hand Tracking) → กลับไปใช้แบบ Follow อัตโนมัติ
+    - ยังไม่ทำ: สั่น Controller เมื่อภารกิจเปลี่ยน · ทิศหลังมือบน WebXR อาจต่างจาก OpenXR → ปรับ `wristFaceLocal`/`wristLocalOffset` ใน Inspector
+
+#### Tested
+
+- WebXR v5 บน Quest 3 (2 พ.ย.): ป้ายภารกิจจมพื้น เห็นแค่บรรทัดแรก ภาพจากหน้าเว็บก่อนกดเข้า VR กล้องอยู่ระดับพื้น · ตัวอักษรไทยบรรทัดแรกแสดงปกติ
+- โค้ดใหม่**ยังไม่ได้คอมไพล์ใน Unity** และยังไม่ Build v6
+
+#### Next work
+
+- เปิด Unity บน `feature/xr-webxr-integration` ดู Console → Play ใน Simulator ว่าป้ายยังขึ้นปกติ → Build v6 → Deploy → ทดสอบในแว่นทั้งก่อนและหลังกดเข้า VR
+- ข้อสังเกต: 29 ต.ค.–2 พ.ย. เครื่องค้างอยู่บน branch เก่า `feature/xr-webxr-integration` · มี stash `M5 2-Nov: OpenXRPackageSettings fileID reorder` (แค่ Unity เรียง fileID ใหม่ ทิ้งได้)
+
+---
+
+### 2 พ.ย. 2026 (03:11) — ย้ายงาน M5 กลับเข้า `feature/xr-webxr-integration` (แชท M5)
+
+Branch: `feature/xr-webxr-integration` (`7bbd6ff`)
+
+#### Completed
+
+- เหตุผล: ชื่อ `feature/webxr` กับ `feature/xr-webxr-integration` คล้ายกัน กดสลับผิดใน GitHub Desktop 2 ครั้ง (29 ต.ค. และ 2 พ.ย.) ทำให้เครื่องค้างบนโค้ดเก่า 1 ต.ค. · เอกสารแบ่งงานเดิม (`main`, 14 ก.ย.) กำหนดให้ M5 ใช้ `feature/xr-webxr-integration`
+- ตรวจก่อนย้าย: `feature/xr-webxr-integration` เป็นต้นทางของ `feature/webxr` (ตามหลัง 35 commit) ไม่มีไฟล์งานหาย (ต่างกันแค่เอกสาร 4 ไฟล์ที่ย้าย/ลบตอนจัดระเบียบ 21 ต.ค.) · `MainVR.unity` เหมือนกันทุกไบต์
+- ผู้ใช้ merge แบบ **fast-forward** ใน GitHub Desktop → push → ลบ `feature/webxr` ในเครื่อง (บน GitHub อาจยังเหลือ ลบด้วย `git push origin --delete feature/webxr`)
+- แก้ชื่อ branch ใน `WEBXR_2026-10-27.md`, `PROJECT_CONTEXT.md`, HANDOFF ใน Project
+
+#### Problems / decisions
+
+- **M5 = `feature/xr-webxr-integration` · M1 = `feature/gameplay-content-ui`** ไม่ใช้ `feature/webxr` อีก
+- stash ที่ค้าง: `M5 2-Nov: OpenXRPackageSettings fileID reorder` (Unity เรียง fileID ใหม่ ทิ้งได้) และ stash เก่าของ GitHub Desktop 2 อัน
+
+---
+
+### 2 พ.ย. 2026 (12:00) — รวมงาน M5 เข้า `develop` (แชท M5)
+
+Branch: `develop` (= `feature/gameplay-content-ui` `ce60600`) ← merge `feature/xr-webxr-integration` (`b3e20e0`)
+
+#### Completed
+
+- เหตุผล: Web Build v6 (2 พ.ย. 11:08) สร้างจาก branch M1 → มีระบบกระทะ/ปรุง แต่**ไม่มี**ป้ายติดข้อมือและการแก้ความสูงของ M5 · รวมเข้า `develop` แล้ว Build v7 จาก `develop` (ยังไม่ Deploy v6 เพื่อประหยัดเครดิต)
+- ฉาก `GameplayTest_M1.unity` และ `MissionChecklistUI.cs` รวมอัตโนมัติ ไม่ชน (ป้ายข้อมือ M5 + ข้อความขั้นที่ผ่านแล้วสรุปบรรทัดเดียว/คำว่า "ใส่" ของ M1 อยู่ด้วยกัน)
+- ไฟล์ที่ชน: `Assets/XR-Web/Scripts/WebXRHeightFix.cs` (ทั้งสองฝั่งย้ายไฟล์คนละ commit → ใช้เวอร์ชัน M5 GUID เดียวกัน) · `PROJECT_CONTEXT.md` ตาราง branch (ใช้แถว `feature/xr-webxr-integration`)
+
+#### Next work
+
+- เปิด Unity บน `develop` → Console ไม่มี error → Play `GameplayTest_M1` → Build v7 → Deploy → ทดสอบแว่น: ป้ายข้อมือ ความสูง จับ/หั่น/ผัด/ปรุง
+- หลังผ่าน: นำ `develop` กลับเข้า `feature/gameplay-content-ui` และ `feature/xr-webxr-integration` (fast-forward) ให้ทั้งสองฝั่งมีงานล่าสุด
+
+---
+
 ## Daily entry template
 
 ### วันที่ — หัวข้องาน
