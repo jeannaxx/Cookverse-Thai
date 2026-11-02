@@ -19,6 +19,8 @@ public class SeasoningBottle : MonoBehaviour
     [SerializeField] private Transform spout;
     [Tooltip("แท่งสายเครื่องปรุงที่โผล่ใต้ปากขวดตอนเท (ไม่บังคับ)")]
     [SerializeField] private Transform pourStream;
+    [Tooltip("ป้ายที่ขึ้นชื่อขวดตอนหยิบ ว่างไว้ = ใช้ป้าย SeasoningShelfUI เหนือชั้นเครื่องปรุง")]
+    [SerializeField] private CollectionFeedbackUI grabFeedback;
 
     [Header("Pouring")]
     [SerializeField] private float pourTiltAngle = 100f;
@@ -55,6 +57,12 @@ public class SeasoningBottle : MonoBehaviour
     {
         grab = GetComponent<XRGrabInteractable>();
 
+        if (grabFeedback == null)
+        {
+            GameObject shelfLabel = GameObject.Find("SeasoningShelfUI");
+            grabFeedback = shelfLabel != null ? shelfLabel.GetComponent<CollectionFeedbackUI>() : null;
+        }
+
         if (pourStream != null)
         {
             pourStream.gameObject.SetActive(false);
@@ -68,13 +76,25 @@ public class SeasoningBottle : MonoBehaviour
             grab = GetComponent<XRGrabInteractable>();
         }
         grab.activated.AddListener(OnActivated);
+        grab.selectEntered.AddListener(OnGrabbed);
         grab.selectExited.AddListener(OnReleased);
     }
 
     private void OnDisable()
     {
         grab.activated.RemoveListener(OnActivated);
+        grab.selectEntered.RemoveListener(OnGrabbed);
         grab.selectExited.RemoveListener(OnReleased);
+    }
+
+    private void OnGrabbed(SelectEnterEventArgs args)
+    {
+        if (grabFeedback != null)
+        {
+            grabFeedback.ShowStationMessage(
+                $"ถือ{displayNameThai}แล้ว นำไปเหนือกระทะ แล้วเอียงคว่ำหรือกดไกเพื่อเท",
+                true);
+        }
     }
 
     private void OnActivated(ActivateEventArgs args)

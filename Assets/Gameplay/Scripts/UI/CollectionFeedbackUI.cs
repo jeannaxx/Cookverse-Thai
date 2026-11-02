@@ -1,7 +1,13 @@
 using System.Collections;
+using System.Globalization;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ป้ายข้อความตอบสนองตามจุดทำงาน (จุดเก็บของ อ่างล้าง เขียง เตา ชั้นเครื่องปรุง)
+// ปกติซ่อนไว้ โผล่ visibleSeconds วินาทีเมื่อมีเหตุการณ์ (ถูก/ผิด/คำเตือน) แล้วหายเอง
+// คำสั่งขั้นตอนที่ขึ้นค้างย้ายไปอยู่ในป้ายภารกิจ (MissionChecklistUI)
+// initialMessage ยังเก็บไว้ ใช้เมื่อเปิด showIdleMessage (เช่นถ้าภายหลังอยากให้ Training ขึ้นค้าง)
 public class CollectionFeedbackUI : MonoBehaviour
 {
     [Header("Required References")]
@@ -10,8 +16,13 @@ public class CollectionFeedbackUI : MonoBehaviour
     [Header("Display Settings")]
     [SerializeField] private float visibleSeconds = 2.5f;
     [SerializeField] private bool faceMainCamera = true;
-    [SerializeField] private string initialMessage =
-        "นำใบกะเพราและพริกมาวางบนโต๊ะเตรียมวัตถุดิบ";
+    [Tooltip("แสดง initialMessage ค้างไว้ตอนไม่มีเหตุการณ์ (ปิดไว้ ป้ายจะซ่อนตอนว่าง)")]
+    [SerializeField] private bool showIdleMessage;
+    [SerializeField] private string initialMessage = string.Empty;
+    [Tooltip("ขนาดตัวหนังสือตอนเล่น (18 × สเกลป้าย 0.0015 ≈ 2.7 ซม.)")]
+    [SerializeField] private int fontSize = 18;
+    [Tooltip("ตัดบรรทัดเองที่ช่องว่าง ไม่ให้ตัดกลางคำไทย · นับเฉพาะตัวอักษรที่กินที่")]
+    [SerializeField] private int maxCharsPerLine = 36;
 
     [Header("Colors")]
     [SerializeField] private Color correctColor =
@@ -37,8 +48,9 @@ public class CollectionFeedbackUI : MonoBehaviour
     private void Awake()
     {
         EnsureThaiFont();
+        ApplyTextLayout();
         EnsureBackground();
-        ShowMessage(initialMessage, Color.white, false);
+        ShowIdle();
     }
 
     private void LateUpdate()
@@ -113,7 +125,19 @@ public class CollectionFeedbackUI : MonoBehaviour
 
     public void ResetFeedback()
     {
-        ShowMessage(initialMessage, Color.white, false);
+        ShowIdle();
+    }
+
+    private void ShowIdle()
+    {
+        if (showIdleMessage && !string.IsNullOrWhiteSpace(initialMessage))
+        {
+            ShowMessage(initialMessage, Color.white, false);
+        }
+        else
+        {
+            Hide();
+        }
     }
 
     private void ShowMessage(
@@ -121,6 +145,12 @@ public class CollectionFeedbackUI : MonoBehaviour
         Color color,
         bool hideAutomatically = true)
     {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            Hide();
+            return;
+        }
+
         Debug.Log($"[ผลการเก็บ] {message}", this);
 
         if (feedbackText == null)
@@ -128,7 +158,7 @@ public class CollectionFeedbackUI : MonoBehaviour
             return;
         }
 
-        feedbackText.text = message;
+        feedbackText.text = WrapThai(message, maxCharsPerLine);
         feedbackText.color = color;
         feedbackText.gameObject.SetActive(true);
         FitBackground();
@@ -148,6 +178,17 @@ public class CollectionFeedbackUI : MonoBehaviour
     private IEnumerator HideAfterDelay()
     {
         yield return new WaitForSecondsRealtime(visibleSeconds);
+        hideRoutine = null;
+        Hide();
+    }
+
+    private void Hide()
+    {
+        if (hideRoutine != null)
+        {
+            StopCoroutine(hideRoutine);
+            hideRoutine = null;
+        }
 
         if (feedbackText != null)
         {
@@ -158,8 +199,83 @@ public class CollectionFeedbackUI : MonoBehaviour
         {
             background.gameObject.SetActive(false);
         }
+    }
 
-        hideRoutine = null;
+    private void ApplyTextLayout()
+    {
+        if (feedbackText == null)
+        {
+            return;
+        }
+
+        feedbackText.fontSize = fontSize;
+        // ตัดบรรทัดเองใน WrapThai จึงปิดการตัดอัตโนมัติ (ซึ่งตัดกลางคำไทย)
+        feedbackText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        feedbackText.verticalOverflow = VerticalWrapMode.Overflow;
+    }
+
+    // ตัดบรรทัดที่ช่องว่างเท่านั้น คำที่ยาวกว่า maxChars อยู่บรรทัดเดียว (ไม่ตัดกลางคำ)
+    public static string WrapThai(string message, int maxChars)
+    {
+        if (string.IsNullOrEmpty(message) || maxChars <= 0)
+        {
+            return message;
+        }
+
+        var builder = new StringBuilder(message.Length + 8);
+        string[] paragraphs = message.Split('\n');
+
+        for (int p = 0; p < paragraphs.Length; p++)
+        {
+            if (p > 0)
+            {
+                builder.Append('\n');
+            }
+
+            int lineLength = 0;
+
+            foreach (string word in paragraphs[p].Split(' '))
+            {
+                if (word.Length == 0)
+                {
+                    continue;
+                }
+
+                int width = VisibleLength(word);
+
+                if (lineLength > 0 && lineLength + 1 + width > maxChars)
+                {
+                    builder.Append('\n');
+                    lineLength = 0;
+                }
+                else if (lineLength > 0)
+                {
+                    builder.Append(' ');
+                    lineLength++;
+                }
+
+                builder.Append(word);
+                lineLength += width;
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    // สระบน/ล่างและวรรณยุกต์ไม่กินที่ในบรรทัด จึงไม่นับ
+    private static int VisibleLength(string text)
+    {
+        int count = 0;
+
+        foreach (char c in text)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     // พื้นหลังสร้างตอนเริ่มเกม ไม่ต้องแก้ Prefab/ฉาก · วางก่อนตัวหนังสือจึงอยู่ด้านหลัง
@@ -191,7 +307,7 @@ public class CollectionFeedbackUI : MonoBehaviour
         RectTransform textRect = feedbackText.rectTransform;
         float width = textRect.rect.width;
         float height = Mathf.Max(feedbackText.preferredHeight, feedbackText.fontSize * 1.2f);
-        float textWidth = Mathf.Min(feedbackText.preferredWidth, width > 1f ? width : feedbackText.preferredWidth);
+        float textWidth = feedbackText.preferredWidth;
 
         background.anchorMin = textRect.anchorMin;
         background.anchorMax = textRect.anchorMax;
