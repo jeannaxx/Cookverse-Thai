@@ -27,7 +27,9 @@ public static class ActionLog
 {
     // ชื่อ Action ขั้นต่ำตาม Contract v1
     public static class Actions
+    
     {
+        public const string SauceMixed = "SauceMixed";   // เทเครื่องปรุงลงถ้วยผสม
         public const string MissionAccepted = "MissionAccepted";
         public const string IngredientCollected = "IngredientCollected";
         public const string IngredientPlaced = "IngredientPlaced";
@@ -38,6 +40,7 @@ public static class ActionLog
         public const string FoodStirred = "FoodStirred";
         public const string FoodStateChanged = "FoodStateChanged";
         public const string HintRequested = "HintRequested";
+        public const string DishPlated = "DishPlated";   // ตักจากกระทะใส่จาน (value สรุปจาน)
         public const string DishServed = "DishServed";
         public const string MissionCompleted = "MissionCompleted";
         public const string MissionReset = "MissionReset";

@@ -19,6 +19,10 @@ public class IngredientIdentity : MonoBehaviour
     [SerializeField] private IngredientState currentState =
         IngredientState.Raw;
 
+    [Header("Cut Visual")]
+    [Tooltip("ขนาดหลังหั่นเทียบกับก้อนเดิม (1 = เท่าเดิม) · ไก่ใช้ 0.55 ให้เป็นชิ้นพอคำ ไม่ล้นกระทะ 28 ซม.")]
+    [SerializeField, Range(0.3f, 1f)] private float cutSizeMultiplier = 1f;
+
     private Transform initialParent;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
@@ -345,6 +349,13 @@ public class IngredientIdentity : MonoBehaviour
 
         wholeRenderer.enabled = false;
         hiddenWholeRenderer = wholeRenderer;
+
+        // ย่อทั้งก้อน (รวม Collider) หลังหั่น · Reset คืนขนาดเดิมใน RestoreInitialPose
+        if (cutSizeMultiplier < 0.999f)
+        {
+            CaptureInitialPoseIfNeeded();
+            transform.localScale = initialLocalScale * cutSizeMultiplier;
+        }
     }
 
     private void ClearStateVisual()

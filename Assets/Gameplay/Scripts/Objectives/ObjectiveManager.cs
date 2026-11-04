@@ -29,6 +29,12 @@ public class ObjectiveManager : MonoBehaviour
     public const string CookChickenStepId = "cook_chicken";
     public const string CookSeasonStepId = "cook_season";
     public const string CookStepId = CookChickenStepId; // ชื่อเดิม คงไว้ให้โค้ดเก่าใช้ได้
+
+    // ขั้นเสิร์ฟ: ปิดเตา ตักใส่จาน → นำไปเสิร์ฟป้าแสง (เสิร์ฟครั้งเดียวจบภารกิจ)
+    public const string ServePlateStepId = "serve_plate";
+    public const string ServeNpcStepId = "serve_npc";
+    public const string DishPlatedId = "dish_plated";
+    public const string DishServedId = "dish_served";
     public const string KrapowLeafIngredientId = "krapow_leaf";
     public const string ChiliIngredientId = "chili";
     public const string ChickenIngredientId = "chicken";
@@ -85,12 +91,12 @@ public class ObjectiveManager : MonoBehaviour
                 this);
             steps = CreateDefaultSteps();
         }
-        else if (FindStep(CookAromaticsStepId) == null)
+        else if (FindStep(CookAromaticsStepId) == null || FindStep(ServeNpcStepId) == null)
         {
             // ฉากที่บันทึกตารางรุ่นก่อนมีขั้นปรุง (cook_krapow) ยังเล่นได้
             // รัน Tools > Cookverse Thai > M1 > Setup Pan Cooking เพื่อบันทึกตารางใหม่ลงฉาก
             Debug.LogWarning(
-                "[เป้าหมาย] ตารางขั้นภารกิจในฉากเป็นรุ่นเก่า จึงใช้ตารางล่าสุด (มีขั้นปรุง 3 ขั้น)",
+                "[เป้าหมาย] ตารางขั้นภารกิจในฉากเป็นรุ่นเก่า จึงใช้ตารางล่าสุด (ขั้นปรุง 3 ขั้น + ขั้นเสิร์ฟ 2 ขั้น)",
                 this);
             steps = CreateDefaultSteps();
         }
@@ -254,7 +260,27 @@ public class ObjectiveManager : MonoBehaviour
                     "คนให้เข้ากัน",
                     "ครั้ง",
                     1,
-                    IngredientState.Cooking))
+                    IngredientState.Cooking)),
+            new MissionStepDefinition(
+                ServePlateStepId,
+                "ปิดเตา แล้วตักใส่จานที่โต๊ะจัดจาน",
+                new IngredientRequirement(
+                    DishPlatedId,
+                    string.Empty,
+                    "ตักผัดกะเพราใส่จาน",
+                    "จาน",
+                    1,
+                    IngredientState.Served)),
+            new MissionStepDefinition(
+                ServeNpcStepId,
+                "นำจานไปเสิร์ฟป้าแสงที่โต๊ะทานข้าว",
+                new IngredientRequirement(
+                    DishServedId,
+                    string.Empty,
+                    "เสิร์ฟป้าแสง",
+                    "จาน",
+                    1,
+                    IngredientState.Served))
         };
     }
 
@@ -588,6 +614,45 @@ public class ObjectiveManager : MonoBehaviour
         return false;
     }
 
+    public bool MissionCompleted { get; private set; }
+
+    // นับขั้นเสิร์ฟ: หาในขั้นปัจจุบันและขั้นถัดไปทั้งหมด (ตักใส่จานได้แม้ยังปรุงไม่ครบ
+    // ข้อผิดพลาดบันทึกใน DishPlated/DishServed ให้ระบบคะแนนตัดสิน) · เสิร์ฟแล้ว = จบภารกิจ
+    public bool RecordServeProgress(string dishId)
+    {
+        if (!missionAccepted || MissionCompleted || steps == null)
+        {
+            return false;
+        }
+
+        int start = Mathf.Max(0, steps.FindIndex(s => s.stepId == currentStepId));
+
+        for (int i = start; i < steps.Count; i++)
+        {
+            IngredientRequirement requirement = steps[i].FindRequirement(dishId, IngredientState.Served);
+
+            if (requirement == null || requirement.IsComplete)
+            {
+                continue;
+            }
+
+            requirement.currentCount++;
+            Debug.Log($"[เป้าหมาย] {steps[i].titleThai}: {requirement.displayNameThai} ครบ", this);
+
+            if (dishId == DishServedId)
+            {
+                MissionCompleted = true;
+                ActionLog.Record(ActionLog.Actions.MissionCompleted, currentStepId);
+            }
+
+            AdvanceWhileComplete();
+            NotifyObjectiveChanged();
+            return true;
+        }
+
+        return false;
+    }
+
     private void AdvanceWhileComplete()
     {
         MissionStepDefinition step = CurrentStep;
@@ -718,6 +783,7 @@ public class ObjectiveManager : MonoBehaviour
     public void ClearProgress()
     {
         missionAccepted = false;
+        MissionCompleted = false;
         currentStepId = steps != null && steps.Count > 0
             ? steps[0].stepId
             : AcceptMissionStepId;

@@ -120,6 +120,9 @@ public static class M1KitchenSetupEditor
             identity.FindProperty("instanceId").stringValue = string.Empty;
             identity.FindProperty("currentState").enumValueIndex =
                 (int)IngredientState.Raw;
+            // ไก่ก้อน 18 ซม. หั่นแล้วย่อเหลือชิ้นพอคำ ไม่ล้นกระทะ (ผลทดสอบแว่น v9)
+            identity.FindProperty("cutSizeMultiplier").floatValue =
+                ingredientId == ObjectiveManager.ChickenIngredientId ? 0.55f : 1f;
             identity.ApplyModifiedPropertiesWithoutUndo();
 
             MeshRenderer renderer = root.GetComponent<MeshRenderer>();

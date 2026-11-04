@@ -3,8 +3,9 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // ขวดเครื่องปรุง 1 ขวด = 1 ชนิด (น้ำมัน ซอสหอยนางรม น้ำปลา น้ำตาล)
-// เทได้ 2 วิธี เมื่อถือปากขวดอยู่เหนือกระทะ:
-//   (1) เอียงขวดคว่ำเกิน pourTiltAngle ค้าง tiltHoldSeconds วินาที
+// ซอส 3 อย่างเทลงถ้วยผสม (SauceBowl) แล้วเทถ้วยลงกระทะทีเดียว · น้ำมันเทลงกระทะตรง
+// เทได้ 2 วิธี เมื่อถือปากขวดอยู่เหนือถ้วยหรือกระทะ:
+//   (1) เอียงขวดเกิน pourTiltAngle (75°) ค้าง tiltHoldSeconds (0.25 วินาที)
 //   (2) กดไก (Activate) ขณะถือขวด
 // เท 1 ครั้ง = 1 Portion · ต้องตั้งขวดกลับก่อนจึงเทแบบเอียงได้อีก (กันนับรัวตอนเอียงค้าง)
 [RequireComponent(typeof(XRGrabInteractable))]
@@ -21,11 +22,14 @@ public class SeasoningBottle : MonoBehaviour
     [SerializeField] private Transform pourStream;
     [Tooltip("ป้ายที่ขึ้นชื่อขวดตอนหยิบ ว่างไว้ = ใช้ป้าย SeasoningShelfUI เหนือชั้นเครื่องปรุง")]
     [SerializeField] private CollectionFeedbackUI grabFeedback;
+    [Tooltip("ถ้วยผสมซอส ว่างไว้ = หาในฉากเอง · น้ำมันไม่เทลงถ้วย")]
+    [SerializeField] private SauceBowl bowl;
 
     [Header("Pouring")]
-    [SerializeField] private float pourTiltAngle = 100f;
-    [SerializeField] private float uprightResetAngle = 60f;
-    [SerializeField] private float tiltHoldSeconds = 0.4f;
+    // ผลทดสอบแว่น v9: เทได้แค่ขวดเดียว · คนเทจริงเอียงราว 70–90° จึงลดจาก 100°/0.4 วิ
+    [SerializeField] private float pourTiltAngle = 75f;
+    [SerializeField] private float uprightResetAngle = 40f;
+    [SerializeField] private float tiltHoldSeconds = 0.25f;
     [SerializeField] private float streamSeconds = 0.6f;
 
     private XRGrabInteractable grab;
@@ -38,6 +42,12 @@ public class SeasoningBottle : MonoBehaviour
     public string InstanceId => $"{ingredientId}-bottle";
     public Vector3 SpoutPosition =>
         spout != null ? spout.position : transform.position + transform.up * 0.12f;
+
+    // น้ำมันลงกระทะเท่านั้น · ซอสอื่นลงถ้วยถ้าปากขวดอยู่เหนือถ้วย
+    private bool IsAboveBowl =>
+        bowl != null &&
+        ingredientId != ObjectiveManager.CookingOilIngredientId &&
+        bowl.IsAbove(SpoutPosition);
 
     public void Configure(
         string id,
@@ -61,6 +71,11 @@ public class SeasoningBottle : MonoBehaviour
         {
             GameObject shelfLabel = GameObject.Find("SeasoningShelfUI");
             grabFeedback = shelfLabel != null ? shelfLabel.GetComponent<CollectionFeedbackUI>() : null;
+        }
+
+        if (bowl == null)
+        {
+            bowl = FindAnyObjectByType<SauceBowl>();
         }
 
         if (pourStream != null)
@@ -91,8 +106,11 @@ public class SeasoningBottle : MonoBehaviour
     {
         if (grabFeedback != null)
         {
+            string target = bowl != null && ingredientId != ObjectiveManager.CookingOilIngredientId
+                ? "ถ้วยผสมซอสบนโต๊ะเตรียม"
+                : "กระทะ";
             grabFeedback.ShowStationMessage(
-                $"ถือ{displayNameThai}แล้ว นำไปเหนือกระทะ แล้วเอียงคว่ำหรือกดไกเพื่อเท",
+                $"ถือ{displayNameThai}แล้ว เอียงหรือกดไกเหนือ{target}เพื่อเท",
                 true);
         }
     }
@@ -120,7 +138,7 @@ public class SeasoningBottle : MonoBehaviour
         }
 
         float tilt = Vector3.Angle(transform.up, Vector3.up);
-        bool abovePan = pan != null && pan.IsAbovePan(SpoutPosition);
+        bool abovePan = IsAboveBowl || (pan != null && pan.IsAbovePan(SpoutPosition));
         UpdateTilt(tilt, abovePan, Time.deltaTime);
     }
 
@@ -160,11 +178,19 @@ public class SeasoningBottle : MonoBehaviour
             return false;
         }
 
+        if (IsAboveBowl)
+        {
+            ShowStream();
+            return bowl.AddSeasoning(ingredientId, displayNameThai);
+        }
+
         if (!pan.IsAbovePan(SpoutPosition))
         {
             if (fromButton)
             {
-                pan.ShowHint($"ถือขวด{displayNameThai}ให้อยู่เหนือกระทะก่อนเท");
+                pan.ShowHint(bowl != null && ingredientId != ObjectiveManager.CookingOilIngredientId
+                    ? $"ถือขวด{displayNameThai}ให้อยู่เหนือถ้วยผสมซอสก่อนเท"
+                    : $"ถือขวด{displayNameThai}ให้อยู่เหนือกระทะก่อนเท");
             }
 
             return false;

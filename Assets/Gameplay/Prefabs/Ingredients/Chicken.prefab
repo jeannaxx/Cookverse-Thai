@@ -289,3 +289,4 @@ MonoBehaviour:
   displayNameThai: "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E44\u0E01\u0E48"
   instanceId: 
   currentState: 0
+  cutSizeMultiplier: 0.55

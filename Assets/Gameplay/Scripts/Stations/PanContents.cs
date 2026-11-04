@@ -28,6 +28,8 @@ public class PanContents : MonoBehaviour, IMissionResettable
     [SerializeField] private float horizontalMargin = 0.05f;
     [Tooltip("ความสูงเหนือกระทะที่ยังนับว่าเทลงกระทะ (เมตร)")]
     [SerializeField] private float pourHeightAbovePan = 0.5f;
+    [Tooltip("ขยายขอบกระทะแนวนอนเฉพาะการเทเครื่องปรุง (เมตร) · กว้างกว่าการคน เพราะปากขวดเล็งยากในแว่น")]
+    [SerializeField] private float pourHorizontalMargin = 0.12f;
 
     private readonly Dictionary<Collider, IngredientIdentity> colliders = new();
     private readonly HashSet<IngredientIdentity> inPan = new();
@@ -40,6 +42,8 @@ public class PanContents : MonoBehaviour, IMissionResettable
     public CookingOrder Order => order;
     public int StirCount { get; private set; }
     public bool HasAnything => order.Added.Count > 0;
+    public bool Plated { get; private set; }
+    public int StoveLevel => stove != null ? stove.Level : 0;
 
     public float GetHeat(IngredientIdentity ingredient)
     {
@@ -63,7 +67,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
         zoneCollider = GetComponent<Collider>();
     }
 
-    private string CurrentStepId => objectiveManager != null ? objectiveManager.CurrentStepId : string.Empty;
+    public string CurrentStepId => objectiveManager != null ? objectiveManager.CurrentStepId : string.Empty;
     private string HeatValue => stove != null ? $"heat={stove.Level}" : "heat=?";
 
     // ---------- พื้นที่กระทะ ----------
@@ -93,9 +97,10 @@ public class PanContents : MonoBehaviour, IMissionResettable
     public bool IsAbovePan(Vector3 point)
     {
         Bounds b = PanBounds;
+        float margin = Mathf.Max(horizontalMargin, pourHorizontalMargin);
         bool insideXZ =
-            point.x >= b.min.x - horizontalMargin && point.x <= b.max.x + horizontalMargin &&
-            point.z >= b.min.z - horizontalMargin && point.z <= b.max.z + horizontalMargin;
+            point.x >= b.min.x - margin && point.x <= b.max.x + margin &&
+            point.z >= b.min.z - margin && point.z <= b.max.z + margin;
         return insideXZ && point.y >= b.min.y && point.y <= b.max.y + pourHeightAbovePan;
     }
 
@@ -273,6 +278,134 @@ public class PanContents : MonoBehaviour, IMissionResettable
             value: $"{stirValue};count={StirCount};{HeatValue}");
     }
 
+    // ---------- ตักใส่จาน ----------
+
+    // ตักได้เมื่อมีของในกระทะ ยังไม่เคยตัก และ (ปิดเตาแล้ว หรือปรุงครบขั้นปรุงรสแล้ว)
+    // ปรุงครบแต่ไม่ปิดเตา ยังตักได้ แต่ DishPlated บันทึก heat>0 เป็นข้อผิดพลาด
+    public bool CanScoop(out string reason)
+    {
+        if (objectiveManager == null || !objectiveManager.MissionAccepted || !HasAnything)
+        {
+            reason = "ยังไม่มีอาหารในกระทะ";
+            return false;
+        }
+
+        if (Plated)
+        {
+            reason = "ตักใส่จานไปแล้ว";
+            return false;
+        }
+
+        bool cookingDone = objectiveManager.IsStepComplete(ObjectiveManager.CookSeasonStepId);
+
+        if (StoveLevel > 0 && !cookingDone)
+        {
+            reason = "ปิดเตาก่อนตักใส่จาน";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    // ย้ายอาหารจากกระทะลงจาน: สรุปจาน · บันทึก DishPlated · ย้ายวัตถุดิบออกจากฉาก (Reset คืนเอง)
+    public DishSummary TakeDishForPlating()
+    {
+        if (!CanScoop(out string reason))
+        {
+            Show(reason, false);
+            return null;
+        }
+
+        var summary = new DishSummary
+        {
+            HeatLevel = StoveLevel,
+            ChickenState = ChickenStateInPan(),
+            OrderMistakes = 0
+        };
+
+        foreach (string id in RequiredForDish)
+        {
+            if (!order.Has(id))
+            {
+                summary.Missing.Add(id);
+            }
+        }
+
+        if (!order.AromaticsStirred) summary.Missing.Add(ObjectiveManager.StirAromaticsId);
+        if (!order.FinalStirred) summary.Missing.Add(ObjectiveManager.StirFinalId);
+
+        Plated = true;
+
+        foreach (IngredientIdentity ingredient in inPan)
+        {
+            if (ingredient == null)
+            {
+                continue;
+            }
+
+            ingredient.TrySetState(IngredientState.Served);
+            ParkIngredient(ingredient);
+        }
+
+        colliders.Clear();
+
+        ActionLog.Record(ActionLog.Actions.DishPlated, CurrentStepId,
+            isCorrect: summary.IsCorrect, value: summary.ToLogValue());
+        objectiveManager.RecordServeProgress(ObjectiveManager.DishPlatedId);
+        Show(summary.HeatLevel > 0 ? "ตักใส่จานแล้ว แต่ยังไม่ได้ปิดเตา" : "ตักใส่จานแล้ว นำไปเสิร์ฟป้าแสง", summary.HeatLevel == 0);
+        return summary;
+    }
+
+    private static readonly string[] RequiredForDish =
+    {
+        ObjectiveManager.CookingOilIngredientId,
+        ObjectiveManager.GarlicIngredientId,
+        ObjectiveManager.ChiliIngredientId,
+        ObjectiveManager.ChickenIngredientId,
+        ObjectiveManager.OysterSauceIngredientId,
+        ObjectiveManager.FishSauceIngredientId,
+        ObjectiveManager.SugarIngredientId,
+        ObjectiveManager.KrapowLeafIngredientId
+    };
+
+    private IngredientState ChickenStateInPan()
+    {
+        foreach (IngredientIdentity ingredient in inPan)
+        {
+            if (ingredient != null && ingredient.IngredientId == trackedIngredientId)
+            {
+                return ingredient.CurrentState;
+            }
+        }
+
+        return IngredientState.Raw;
+    }
+
+    // ซ่อนวัตถุดิบที่ตักไปแล้ว: ย้ายไปใต้ฉากและตรึงไว้ · ResetIngredient คืนตำแหน่ง/ฟิสิกส์เดิม
+    private void ParkIngredient(IngredientIdentity ingredient)
+    {
+        var body = ingredient.GetComponent<Rigidbody>();
+
+        if (body != null)
+        {
+            if (!body.isKinematic)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+
+            body.isKinematic = true;
+        }
+
+        ingredient.transform.position = transform.position + Vector3.down * 20f;
+
+        if (body != null)
+        {
+            body.position = ingredient.transform.position;
+        }
+    }
+
     // ---------- ความสุกของไก่ ----------
 
     private void UpdateDoneness(IngredientIdentity ingredient, float value)
@@ -387,5 +520,6 @@ public class PanContents : MonoBehaviour, IMissionResettable
         heat.Clear();
         order.Clear();
         StirCount = 0;
+        Plated = false;
     }
 }

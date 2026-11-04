@@ -8,11 +8,11 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // สร้างของสำหรับขั้นปรุงใน GameplayTest_M1 ด้วยคลิกเดียว
 // - ขอบกระทะ 4 ด้าน (กันวัตถุดิบไหลตกกระทะ)
-// - ขวดเครื่องปรุง 4 ขวด บนชั้นเครื่องปรุง (SeasoningShelf) ตามตำแหน่ง Marker เดิม
+// - ขวดเครื่องปรุง 4 ขวด บนชั้นเครื่องปรุง (SeasoningShelf) ตามตำแหน่ง Marker เดิม · ซ่อนขวดตกแต่งในช่องนั้น (ไม่ลบ)
+// - ถ้วยผสมซอสบนโต๊ะเตรียม (SauceMixPoint) · ซอส 3 อย่างผสมในถ้วย แล้วถือถ้วยไปเทลงกระทะ
 // - ตะหลิวที่จับได้ วางข้างกระทะ
-// - ป้ายเหนือชั้นเครื่องปรุง (ซ่อนตอนว่าง ขึ้นชื่อขวดตอนหยิบ) และข้อความป้ายเตา (ใช้เมื่อเปิด showIdleMessage)
+// - ป้ายเหนือชั้นเครื่องปรุง (SeasoningShelfUI) และเหนือถ้วย (SauceBowlUI) · ซ่อนตอนว่าง ขึ้นเมื่อหยิบ/เท
 // - อัปเดตตาราง Mission Steps เป็นขั้นปรุง 3 ขั้น
-// - ซ่อนขวดตกแต่งเดิมใน 4 ช่องที่ใช้ (ไม่ลบ) เพื่อไม่ให้ Collider ซ้อนกัน
 // ของใหม่อยู่ใต้ CookingStations/StoveStation/PanCooking · รันซ้ำได้ (ลบของที่สร้างไว้เดิมแล้วสร้างใหม่)
 public static class M1PanSetupEditor
 {
@@ -44,14 +44,15 @@ public static class M1PanSetupEditor
         PanContents pan = FindComponent<PanContents>(scene);
         Transform panBase = FindInScene(scene, "Pan_Base");
         Transform shelf = FindInScene(scene, "SeasoningShelf");
+        Transform sauceMixPoint = FindInScene(scene, "SauceMixPoint");
         Transform gameplayUI = FindInScene(scene, "GameplayUI");
         GameObject feedbackPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FeedbackPrefabPath);
 
         if (objective == null || pan == null || panBase == null || shelf == null ||
-            gameplayUI == null || feedbackPrefab == null)
+            sauceMixPoint == null || gameplayUI == null || feedbackPrefab == null)
         {
             Debug.LogError(
-                "[ตั้งค่าการปรุง] ไม่พบ ObjectiveManager, PanContents, Pan_Base, SeasoningShelf, " +
+                "[ตั้งค่าการปรุง] ไม่พบ ObjectiveManager, PanContents, Pan_Base, SeasoningShelf, SauceMixPoint, " +
                 "GameplayUI หรือ Prefab ป้าย ให้รัน Setup Cooking Stations ก่อน จึงยกเลิก");
             return;
         }
@@ -70,10 +71,13 @@ public static class M1PanSetupEditor
             Undo.DestroyObjectImmediate(previous.gameObject);
         }
 
-        Transform previousLabel = gameplayUI.Find("SeasoningShelfUI");
-        if (previousLabel != null)
+        foreach (string labelName in new[] { "SeasoningShelfUI", "SauceBowlUI" })
         {
-            Undo.DestroyObjectImmediate(previousLabel.gameObject);
+            Transform previousLabel = gameplayUI.Find(labelName);
+            if (previousLabel != null)
+            {
+                Undo.DestroyObjectImmediate(previousLabel.gameObject);
+            }
         }
 
         HideDecorativeBottles(shelf);
@@ -92,23 +96,36 @@ public static class M1PanSetupEditor
         BuildPanRim(root.transform, panBounds, dark);
         Physics.SyncTransforms();
 
+        // ขวดอยู่บนชั้นเครื่องปรุงที่เดิม (ผู้ใช้ตัดสินใจ 4 พ.ย.) · ยิง Ray จากเหนือ Marker ลงหาแผ่นชั้น
         foreach (var spec in Bottles)
         {
-            BuildBottle(root.transform, spec.id, spec.nameThai, spec.marker, spec.color, shelf, pan, template);
+            Transform marker = shelf.Find(spec.marker);
+            Vector3 slot = (marker != null ? marker.position : shelf.position) + Vector3.up * 0.15f;
+            BuildBottle(root.transform, spec.id, spec.nameThai, slot, spec.color, pan, template);
         }
+
+        // ถ้วยผสมซอสบนโต๊ะเตรียม (SauceMixPoint): ผสมซอส 3 อย่างที่นี่ แล้วถือถ้วยไปเทลงกระทะทีเดียว
+        Bounds mixBounds = sauceMixPoint.GetComponent<Renderer>().bounds;
+        Vector3 mixSlot = new Vector3(mixBounds.center.x, mixBounds.max.y + 0.3f, mixBounds.center.z);
+        BuildSauceBowl(root.transform, mixSlot, pan, template);
 
         BuildSpatula(root.transform, panBounds, pan, wood, metal);
 
         string legend = "ชั้นเครื่องปรุง: " + string.Join(" · ",
             Bottles.Select(b => $"{b.colorThai}={b.nameThai}")) +
-            "\nถือขวดไปเหนือกระทะ แล้วเอียงคว่ำหรือกดไกเพื่อเท";
+            "\nน้ำมันเทลงกระทะ · ซอส 3 อย่างเทลงถ้วยบนโต๊ะเตรียม";
         CreateLabel(gameplayUI, feedbackPrefab, "SeasoningShelfUI", shelf.position + Vector3.up * 0.45f, legend);
+        CreateLabel(gameplayUI, feedbackPrefab, "SauceBowlUI",
+            new Vector3(mixBounds.center.x, mixBounds.max.y + 0.5f, mixBounds.center.z),
+            "ถ้วยผสมซอส: เทซอสหอยนางรม น้ำปลา น้ำตาล แล้วถือถ้วยไปเทลงกระทะตอนไก่สุก");
 
         UpdateStoveLabel(pan);
+        BuildServing(scene, station.parent, gameplayUI, feedbackPrefab, objective, template);
         FaceLabels(scene);
         Save(scene);
         Debug.Log(
-            "[ตั้งค่าการปรุง] เสร็จแล้ว: ขอบกระทะ · ขวดเครื่องปรุง 4 ขวด · ตะหลิว · ป้ายชั้นเครื่องปรุง " +
+            "[ตั้งค่าการปรุง] เสร็จแล้ว: ขอบกระทะ · ขวดเครื่องปรุง 4 ขวดบนชั้น · ถ้วยผสมซอสบนโต๊ะเตรียม · ตะหลิว · " +
+            "จานบนโต๊ะจัดจาน · จุดเสิร์ฟข้างป้าแสง · ป้าย " +
             "และตารางขั้นภารกิจมีขั้นปรุง 3 ขั้นแล้ว");
     }
 
@@ -178,7 +195,7 @@ public static class M1PanSetupEditor
         new GameObject("M1 Cooking Test Runner").AddComponent<M1CookingSmokeTest>();
     }
 
-    // ช่องบนชั้นมีขวดตกแต่ง (BottleBody/BottleNeck/Cap) ที่มี Collider ซ่อนเฉพาะช่องที่วางขวดจริง
+    // ช่องบนชั้นมีขวดตกแต่ง (BottleBody/BottleNeck/Cap) ที่มี Collider ซ่อนเฉพาะช่องที่วางขวดจริง (ไม่ลบ)
     private static void HideDecorativeBottles(Transform shelf)
     {
         foreach (var spec in Bottles)
@@ -219,15 +236,13 @@ public static class M1PanSetupEditor
         Block(rim, "Rim_Right", new Vector3(c.x + ex, y, c.z), new Vector3(thickness, height, ez * 2f), material);
     }
 
+    // slotAbove: จุดเหนือที่วาง ยิง Ray ลงหาพื้นผิว (เคาน์เตอร์) แล้ววางก้นขวดบนพื้นผิวนั้น
     private static void BuildBottle(
-        Transform root, string id, string nameThai, string markerName, Color color,
-        Transform shelf, PanContents pan, Material template)
+        Transform root, string id, string nameThai, Vector3 slotAbove, Color color,
+        PanContents pan, Material template)
     {
         const float bodyHalfHeight = 0.09f;
-        Transform marker = shelf.Find(markerName);
-        Vector3 basePosition = marker != null ? marker.position : shelf.position;
-        // เริ่มยิงจากเหนือ Marker เล็กน้อย เผื่อ Marker จมอยู่ในแผ่นชั้น
-        basePosition = PlaceOnSurface(basePosition + Vector3.up * 0.15f, 0.6f) ?? basePosition;
+        Vector3 basePosition = PlaceOnSurface(slotAbove, 0.8f) ?? slotAbove;
 
         Material bodyMaterial = GetOrCreateMaterial($"M1_Bottle_{id}", color, template);
 
@@ -267,6 +282,161 @@ public static class M1PanSetupEditor
         seasoning.Configure(id, nameThai, pan, spout, stream);
         bottle.AddComponent<GrabbableResetPose>();
         EditorUtility.SetDirty(seasoning);
+    }
+
+    // ---------- ขั้นเสิร์ฟ ----------
+
+    // จานบนโต๊ะจัดจาน (PlatingTable) · จุดเสิร์ฟบนโต๊ะทานข้าวข้างที่นั่งป้าแสง (Low_Table)
+    // รันซ้ำ: ลบ Serving และป้าย PlatingUI/ServeUI เดิมแล้วสร้างใหม่
+    private static void BuildServing(
+        Scene scene, Transform parent, Transform gameplayUI, GameObject feedbackPrefab,
+        ObjectiveManager objective, Material template)
+    {
+        Transform platingTable = FindInScene(scene, "PlatingTable");
+        Transform lowTable = FindInScene(scene, "Low_Table");
+
+        if (platingTable == null || lowTable == null)
+        {
+            Debug.LogError("[ตั้งค่าการเสิร์ฟ] ไม่พบ PlatingTable หรือ Low_Table จึงข้ามการสร้างจาน/จุดเสิร์ฟ");
+            return;
+        }
+
+        Transform previous = parent.Find("Serving");
+        if (previous != null)
+        {
+            Undo.DestroyObjectImmediate(previous.gameObject);
+        }
+
+        foreach (string labelName in new[] { "PlatingUI", "ServeUI" })
+        {
+            Transform previousLabel = gameplayUI.Find(labelName);
+            if (previousLabel != null)
+            {
+                Undo.DestroyObjectImmediate(previousLabel.gameObject);
+            }
+        }
+
+        Physics.SyncTransforms();
+
+        var root = new GameObject("Serving");
+        Undo.RegisterCreatedObjectUndo(root, "สร้างจานและจุดเสิร์ฟ");
+        root.transform.SetParent(parent, false);
+        root.transform.position = Vector3.zero;
+
+        // จาน: บนโต๊ะจัดจาน ค่อนไปทาง +X (กองจานตกแต่งอยู่ทาง -X)
+        Bounds tableBounds = platingTable.GetComponent<Renderer>().bounds;
+        Vector3 plateSlot = new Vector3(tableBounds.center.x + 0.3f, tableBounds.max.y + 0.3f, tableBounds.center.z);
+        Vector3 plateBase = PlaceOnSurface(plateSlot, 0.8f) ?? new Vector3(plateSlot.x, tableBounds.max.y, plateSlot.z);
+        GameObject plate = BuildPlate(root.transform, plateBase, template);
+
+        // จุดเสิร์ฟ: ผ้ารองจานบนโต๊ะทานข้าว + พื้นที่ Trigger
+        Bounds lowBounds = lowTable.GetComponent<Renderer>().bounds;
+        Vector3 serveTop = new Vector3(lowBounds.center.x, lowBounds.max.y, lowBounds.center.z);
+        var serve = new GameObject("ServePoint");
+        Undo.RegisterCreatedObjectUndo(serve, "สร้างจุดเสิร์ฟ");
+        serve.transform.SetParent(root.transform, false);
+        serve.transform.position = serveTop;
+        Material mat = GetOrCreateMaterial("M1_ServeMat", new Color(0.93f, 0.86f, 0.70f), template);
+        Visual(serve.transform, "PlaceMat", PrimitiveType.Cube, new Vector3(0f, 0.002f, 0f),
+            new Vector3(0.36f, 0.004f, 0.28f), mat);
+        var trigger = serve.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.center = new Vector3(0f, 0.15f, 0f);
+        trigger.size = new Vector3(0.5f, 0.3f, 0.4f);
+        serve.AddComponent<ServeZone>().Configure(objective);
+
+        CreateLabel(gameplayUI, feedbackPrefab, "PlatingUI", plateBase + Vector3.up * 0.5f,
+            "โต๊ะจัดจาน: ปิดเตา จุ่มตะหลิวในกระทะนิ่ง ๆ เพื่อตัก แล้วแตะจาน");
+        CreateLabel(gameplayUI, feedbackPrefab, "ServeUI", serveTop + Vector3.up * 0.6f,
+            "วางจานบนผ้ารองเพื่อเสิร์ฟป้าแสง");
+
+        Debug.Log($"[ตั้งค่าการเสิร์ฟ] สร้างจาน ({plate.transform.position}) และจุดเสิร์ฟ ({serveTop}) แล้ว");
+    }
+
+    private static GameObject BuildPlate(Transform root, Vector3 basePosition, Material template)
+    {
+        Material white = GetOrCreateMaterial("M1_Plate", new Color(0.97f, 0.97f, 0.95f), template);
+        Material chicken = GetOrCreateMaterial("M1_DishChicken", new Color(0.62f, 0.40f, 0.22f), template);
+        Material leaf = GetOrCreateMaterial("M1_DishLeaf", new Color(0.20f, 0.55f, 0.18f), template);
+        Material chili = GetOrCreateMaterial("M1_DishChili", new Color(0.85f, 0.12f, 0.10f), template);
+
+        var plate = new GameObject("Serving_Plate");
+        Undo.RegisterCreatedObjectUndo(plate, "สร้างจาน");
+        plate.transform.SetParent(root, false);
+        plate.transform.SetPositionAndRotation(basePosition + Vector3.up * 0.004f, Quaternion.identity);
+
+        Visual(plate.transform, "Plate", PrimitiveType.Cylinder, Vector3.zero,
+            new Vector3(0.24f, 0.004f, 0.24f), white);
+
+        // ผัดกะเพราบนจาน (ซ่อนจนกว่าจะตักใส่) · ก้อนไก่เปลี่ยนสีตามความสุก
+        var food = new GameObject("Food");
+        food.transform.SetParent(plate.transform, false);
+        GameObject mound = Visual(food.transform, "Chicken", PrimitiveType.Cylinder,
+            new Vector3(0f, 0.012f, 0f), new Vector3(0.15f, 0.01f, 0.15f), chicken);
+        Visual(food.transform, "Leaf_1", PrimitiveType.Cube, new Vector3(0.03f, 0.025f, 0.02f),
+            new Vector3(0.035f, 0.006f, 0.022f), leaf);
+        Visual(food.transform, "Leaf_2", PrimitiveType.Cube, new Vector3(-0.035f, 0.025f, -0.01f),
+            new Vector3(0.03f, 0.006f, 0.02f), leaf);
+        Visual(food.transform, "Leaf_3", PrimitiveType.Cube, new Vector3(0f, 0.027f, -0.04f),
+            new Vector3(0.028f, 0.006f, 0.018f), leaf);
+        Visual(food.transform, "Chili_1", PrimitiveType.Cube, new Vector3(-0.01f, 0.026f, 0.035f),
+            new Vector3(0.015f, 0.006f, 0.01f), chili);
+        Visual(food.transform, "Chili_2", PrimitiveType.Cube, new Vector3(0.04f, 0.026f, -0.025f),
+            new Vector3(0.015f, 0.006f, 0.01f), chili);
+        food.SetActive(false);
+
+        var box = plate.AddComponent<BoxCollider>();
+        box.center = new Vector3(0f, 0.012f, 0f);
+        box.size = new Vector3(0.24f, 0.03f, 0.24f);
+
+        var body = plate.AddComponent<Rigidbody>();
+        body.mass = 0.4f;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+        var grab = plate.AddComponent<XRGrabInteractable>();
+        grab.useDynamicAttach = true;
+
+        var dishPlate = plate.AddComponent<DishPlate>();
+        dishPlate.Configure(food, mound.GetComponent<Renderer>());
+        plate.AddComponent<GrabbableResetPose>();
+        EditorUtility.SetDirty(dishPlate);
+        return plate;
+    }
+
+    private static void BuildSauceBowl(Transform root, Vector3 slotAbove, PanContents pan, Material template)
+    {
+        const float halfHeight = 0.03f;
+        Vector3 basePosition = PlaceOnSurface(slotAbove, 0.8f) ?? slotAbove;
+        Material bowlMaterial = GetOrCreateMaterial("M1_SauceBowl", new Color(0.92f, 0.92f, 0.88f), template);
+        Material sauceMaterial = GetOrCreateMaterial("M1_SauceMix", new Color(0.30f, 0.17f, 0.08f), template);
+
+        var bowl = new GameObject("Sauce_Bowl");
+        Undo.RegisterCreatedObjectUndo(bowl, "สร้างถ้วยผสมซอส");
+        bowl.transform.SetParent(root, false);
+        bowl.transform.SetPositionAndRotation(basePosition + Vector3.up * (halfHeight + 0.002f), Quaternion.identity);
+
+        Visual(bowl.transform, "Body", PrimitiveType.Cylinder, Vector3.zero,
+            new Vector3(0.14f, halfHeight, 0.14f), bowlMaterial);
+        // ระดับซอส: เริ่มที่ขอบบนตัวถ้วย SauceBowl ปรับความสูงตามจำนวนที่เท
+        Transform fill = Visual(bowl.transform, "SauceFill", PrimitiveType.Cylinder,
+            new Vector3(0f, halfHeight, 0f), new Vector3(0.12f, 0.001f, 0.12f), sauceMaterial).transform;
+
+        var box = bowl.AddComponent<BoxCollider>();
+        box.size = new Vector3(0.14f, halfHeight * 2f, 0.14f);
+
+        var body = bowl.AddComponent<Rigidbody>();
+        body.mass = 0.3f;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+        var grab = bowl.AddComponent<XRGrabInteractable>();
+        grab.useDynamicAttach = true;
+
+        var sauceBowl = bowl.AddComponent<SauceBowl>();
+        sauceBowl.Configure(pan, fill, null); // ป้ายหาเองตอนเริ่มเกม (SeasoningShelfUI)
+        bowl.AddComponent<GrabbableResetPose>();
+        EditorUtility.SetDirty(sauceBowl);
     }
 
     private static void BuildSpatula(Transform root, Bounds panBounds, PanContents pan, Material wood, Material metal)
@@ -323,6 +493,13 @@ public static class M1PanSetupEditor
 
         var stirrer = spatula.AddComponent<SpatulaStirrer>();
         stirrer.Configure(pan, tip);
+
+        // อาหารบนใบตะหลิวตอนตักแล้ว (ด้านบนของใบเมื่อวางนอน = แกน -Z ของตะหลิว)
+        Material dish = GetOrCreateMaterial("M1_DishChicken", new Color(0.62f, 0.40f, 0.22f), metal);
+        GameObject scoopFood = Visual(spatula.transform, "ScoopFood", PrimitiveType.Cube,
+            new Vector3(0f, 0.19f, -0.02f), new Vector3(0.06f, 0.08f, 0.03f), dish);
+        scoopFood.SetActive(false);
+        stirrer.ConfigureScoop(scoopFood);
         spatula.AddComponent<GrabbableResetPose>();
         EditorUtility.SetDirty(stirrer);
     }
