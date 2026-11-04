@@ -69,6 +69,12 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         objective = FindFirstObjectByType<ObjectiveManager>();
         ingredients = FindObjectsByType<IngredientIdentity>(FindObjectsInactive.Exclude);
         var chilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();
+        Debug.Log("[ทดสอบ M1] วัตถุดิบที่พบ: " + string.Join(", ", ingredients.GroupBy(i => i.IngredientId)
+            .Select(g => $"{g.Key}={g.Count()}")) + " · ใต้ Karpao: " +
+            string.Join(", ", FindObjectsByType<Transform>(FindObjectsInactive.Include)
+                .Where(t => t.parent != null && t.parent.name.Trim() == "Karpao")
+                .Select(t => $"{t.name}(active={t.gameObject.activeInHierarchy},id={(t.GetComponent<IngredientIdentity>() != null ? t.GetComponent<IngredientIdentity>().IngredientId : "-")})")
+                .Take(4)));
         var leaf = ingredients.First(i => i.IngredientId == "krapow_leaf");
         var zone = FindFirstObjectByType<IngredientCollector>();
         // วัตถุดิบในสวนอาจตั้งให้อยู่นิ่ง (kinematic) ตั้งแต่ต้น Reset ต้องคืนค่าเดิม
