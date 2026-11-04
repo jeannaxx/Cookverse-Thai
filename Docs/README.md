@@ -13,6 +13,7 @@
 
 | เอกสาร | ใช้ทำอะไร |
 |---|---|
+| [`Planning/Schedule/PLAN_Nov_2026_v2.md`](Planning/Schedule/PLAN_Nov_2026_v2.md) | **แผนปัจจุบัน** 5–30 พ.ย. ฉบับ 2: ไม่ตัดขอบเขต + AI + WebBoard + หลายเมนู |
 | [`Planning/Schedule/PLAN_Oct-Nov_2026.md`](Planning/Schedule/PLAN_Oct-Nov_2026.md) | แผนงาน 22 ต.ค.–30 พ.ย. และการนับความคืบหน้า |
 | [`Planning/Gameplay/GAMEPLAY_CONTENT_V1.md`](Planning/Gameplay/GAMEPLAY_CONTENT_V1.md) | สเปกเมนูผัดกะเพราไก่: วัตถุดิบ ขั้นภารกิจ เตาแก๊ส บทพูด Rubric และ Action Log |
 | [`Planning/Environment/ENVIRONMENT_LAYOUT.md`](Planning/Environment/ENVIRONMENT_LAYOUT.md) | ผังบ้าน ครัว สวน ขนาด และ Hierarchy ใน `MainVR` |

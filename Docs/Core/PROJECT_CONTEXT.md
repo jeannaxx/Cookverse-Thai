@@ -15,9 +15,11 @@ Cookverse Thai เป็นระบบจำลองการเรียน�
 ## 2. ขอบเขตตามคำแนะนำของอาจารย์
 
 ```text
-ภาคเรียนนี้ (ถึง 30 พ.ย.): Unity XR/VR + Gameplay Systems + WebXR
-ภาคเรียนที่ 2 (ม.ค.):     WebBoard + Visual Polish + Content Polish
+ภาคเรียนนี้ (ถึง 30 พ.ย.): Unity XR/VR + Gameplay Systems + WebXR + AI (ป้าแสง/จัดเมนู/ประเมิน) + WebBoard + หลายเมนู
+ภาคเรียนที่ 2 (ม.ค.):     Visual Polish + Content Polish
 ```
+
+> **4 พ.ย. 2026:** ผู้ใช้ขยายขอบเขตภาคเรียนนี้: ย้าย **WebBoard (หน้าบ้าน+หลังบ้าน)** มาจาก ม.ค. · AI 3 งาน (ป้าแสงคุย · จัดเมนู · ประเมินหลังเสิร์ฟ) ผ่าน Gemini + Netlify Functions + Supabase · หลายเมนู · ไม่ตัดขอบเขต แผนรายวันดู [`PLAN_Nov_2026_v2.md`](../Planning/Schedule/PLAN_Nov_2026_v2.md) · ต้องยืนยันกับอาจารย์
 
 ### ภาคเรียนนี้
 
