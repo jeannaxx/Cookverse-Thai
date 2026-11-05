@@ -21,6 +21,7 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
     private IngredientIdentity[] ingredients;
     private Vector3 panCenter;
     private int dropIndex;
+    private int roundStart;   // ตำแหน่ง ActionLog ต้นรอบ (หลัง Reset ใน PrepareToCook) ใช้คิดคะแนน Rubric
 
     private void Check(bool condition, string label)
     {
@@ -163,6 +164,10 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
         Check(LastAction(ActionLog.Actions.DishServed, logStart) is { isCorrect: true } &&
               LastAction(ActionLog.Actions.MissionCompleted, logStart) != null, "บันทึก DishServed และ MissionCompleted");
         Check(!serve.TryServe(plate), "เสิร์ฟซ้ำไม่ได้");
+        RubricResult good = RubricScorer.Score(ActionLog.Entries.Skip(roundStart).ToList());
+        Check(good.passed && good.totalScore >= 80 && string.IsNullOrEmpty(good.forcedFailReason),
+            $"คะแนนรอบทำถูก {good.totalScore}/{good.maxScore} {good.gradeThai} (ต้อง ≥80 ผ่านดีมาก) · " +
+            string.Join(" ", good.categories.Select(c => $"{c.id}={c.score}")));
 
         SeasoningBottle oil = bottles[ObjectiveManager.CookingOilIngredientId];
         Place(oil, oilStart);
@@ -224,6 +229,11 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
             "จานไม่ครบ บันทึกสิ่งที่ขาด");
         Check(serve.TryServe(plate) && objective.MissionCompleted, "เสิร์ฟจานที่ไม่ครบได้ (จบรอบ)");
         Check(LastAction(ActionLog.Actions.DishServed, logStart) is { isCorrect: false }, "บันทึก DishServed ว่าไม่ถูกต้อง");
+        RubricResult bad = RubricScorer.Score(ActionLog.Entries.Skip(roundStart).ToList());
+        Check(!bad.passed && bad.categories.First(c => c.id == RubricScorer.Ingredients).score < 20 &&
+              bad.categories.First(c => c.id == RubricScorer.Order).score < 25,
+            $"คะแนนรอบทำผิด {bad.totalScore}/{bad.maxScore} {bad.gradeThai} (ไม่ผ่าน หักวัตถุดิบและลำดับ) · " +
+            string.Join(" ", bad.categories.Select(c => $"{c.id}={c.score}")));
 
         // ---------- Reset ----------
         objective.ResetObjectives();
@@ -241,6 +251,19 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
             $"Reset เสิร์ฟได้อีกครั้ง (HasServed={serve.HasServed}, MissionCompleted={objective.MissionCompleted})");
         Check(plateMoved < 0.02f, $"Reset จานกลับที่เดิม (ห่าง {plateMoved * 100f:0.0} ซม.)");
         Check(stove.Level == 0, "Reset ปิดเตา");
+
+        // ---------- หน้าผล + ปุ่มเล่นใหม่ ----------
+        ResultBoardUI board = FindAnyObjectByType<ResultBoardUI>();
+        Check(board != null, "มีหน้าผล ResultBoardUI (รัน Setup Result Board แล้ว)");
+        if (board == null) yield break;
+        board.ShowResult(good);
+        Check(board.IsShowing && ResultBoardUI.LastResult == good && board.RestartButton != null, "แสดงหน้าผลพร้อมปุ่มเล่นใหม่");
+        board.Restart();
+        yield return new WaitForEndOfFrame();
+        yield return Tick();
+        Check(!board.IsShowing && objective.CurrentStepId == ObjectiveManager.AcceptMissionStepId &&
+              ActionLog.Entries.All(e => e.action != ActionLog.Actions.DishServed),
+            "กดเล่นใหม่: ซ่อนหน้าผล กลับขั้นรับภารกิจ เริ่ม Log รอบใหม่");
     }
 
     // เก็บ → ล้าง → หั่น ผ่าน ObjectiveManager โดยตรง (ส่วนนี้ทดสอบแล้วในชุดเก็บวัตถุดิบ)
@@ -250,6 +273,7 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
         yield return new WaitForEndOfFrame();
         yield return Tick();
         dropIndex = 0;
+        roundStart = ActionLog.Entries.Count;
         ingredients = FindObjectsByType<IngredientIdentity>(FindObjectsInactive.Exclude);
         FindAnyObjectByType<MissionGiver>().GiveMission();
 

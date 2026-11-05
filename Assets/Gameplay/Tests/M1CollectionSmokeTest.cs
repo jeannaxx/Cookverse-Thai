@@ -68,7 +68,9 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
     {
         objective = FindFirstObjectByType<ObjectiveManager>();
         ingredients = FindObjectsByType<IngredientIdentity>(FindObjectsInactive.Exclude);
-        var chilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();
+        // สวนมีพริกที่เก็บได้ 40 ลูก (ต้นละ 4) · ภารกิจใช้ 3 ลูก → ทดสอบกับ 3 ลูกแรก
+        var allChilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();
+        var chilies = allChilies.Take(3).ToArray();
         Debug.Log("[ทดสอบ M1] วัตถุดิบที่พบ: " + string.Join(", ", ingredients.GroupBy(i => i.IngredientId)
             .Select(g => $"{g.Key}={g.Count()}")) + " · ใต้ Karpao: " +
             string.Join(", ", FindObjectsByType<Transform>(FindObjectsInactive.Include)
@@ -84,7 +86,7 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         yield return new WaitForEndOfFrame();
         // เก็บตำแหน่งเริ่มต้นหลังรีเซ็ต รองรับการรันทดสอบหลังเล่นไปแล้วในรอบเดียวกัน
         starts = ingredients.Select(i => i.transform.position).ToArray();
-        Check(chilies.Length == 3 && objective.RequiredChiliCount == 3, "พริกในฉากและเป้าหมายครบ 3");
+        Check(allChilies.Length >= 3 && objective.RequiredChiliCount == 3, $"พริกในฉากพอ ({allChilies.Length} ลูก) และเป้าหมาย 3");
         Check(ingredients.Select(i => i.InstanceId).Distinct().Count() == ingredients.Length, "รหัสวัตถุดิบแต่ละชิ้นไม่ซ้ำ");
         string[] gardenIds = { "spring_onion", "coriander", "culantro", "lemongrass", "lime", "galangal", "shallot", "thai_basil", "mint",
             "thai_eggplant", "pea_eggplant", "chinese_chives", "kaffir_lime_leaf", "green_papaya", "mango", "long_bean", "tomato" };

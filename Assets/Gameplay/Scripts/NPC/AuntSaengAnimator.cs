@@ -32,7 +32,7 @@ public class AuntSaengAnimator : MonoBehaviour
 
     private void OnEnable()
     {
-        objectiveManager = FindFirstObjectByType<ObjectiveManager>();
+        objectiveManager = FindAnyObjectByType<ObjectiveManager>();
         if (objectiveManager != null)
         {
             missionWasCompleted = objectiveManager.MissionCompleted;

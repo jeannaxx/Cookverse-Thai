@@ -213,13 +213,13 @@ public static class M1AuntSaengSetupEditor
             anim.avatar = avatar;
             anim.runtimeAnimatorController = controller;
             anim.applyRootMotion = false;
-            anim.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;   // ขอบเขต Skinned Mesh จาก Meshy ไม่ตรง → ถ้า Cull Unity คิดว่ามองไม่เห็นแล้วหยุดท่า
 
             foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
             {
                 r.sharedMaterials = Enumerable.Repeat(material, Mathf.Max(1, r.sharedMaterials.Length)).ToArray();
                 r.shadowCastingMode = ShadowCastingMode.On;
-                if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = false;
+                if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = true;   // คำนวณขอบเขตตามท่าจริง (ขอบเขตเดิมจาก Meshy ไม่ตรง)
             }
 
             // ความสูงจริงจาก Mesh (Meshy บางครั้งได้หน่วยซม.) → ปรับสเกลให้สูง ~1.52 ม.

@@ -725,6 +725,48 @@ Branch: `feature/gameplay-content-ui`
 
 ---
 
+### 5 พ.ย. 2026 — สวนครัวครบ 19 ชนิด (แชท M1, commit `6cf4e92`)
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- แปลงยกพื้นขอบไม้ 10 แปลง (เดิม 6 + ขยายสวนทางขวา 4) + กระบะค้างถั่วฝักยาว/มะเขือเทศ + ต้นมะกรูด มะละกอ มะม่วง
+- ผักใหม่ 17 ชนิดเก็บได้ 97 ชิ้น (สร้างจาก `Krapow.prefab`) · เก็บผักที่เมนูไม่ใช้ → "วัตถุดิบไม่ถูกต้อง" + ActionLog
+- โมเดลสร้างจาก `Tools/ModelGen/garden_bed_models.py`, `veggie_models.py` · เมนู `Setup Garden Beds (Raised)`, `Setup Garden Expansion (All Veggies)`
+- บันทึกเมนูชุดแรก 13 เมนู + ผักในสวน + ที่เก็บวัตถุดิบ: `Docs/Planning/Gameplay/MENU_LIST_AND_GARDEN.md`
+
+#### Problems / decisions
+
+- ฉากในหน่วยความจำ Unity เคยหาย `GardenBase` แล้วถูกเซฟทับ → กู้จากไฟล์สำรอง `UnityProjects/SceneBackups/` · เครื่องมือหาสวนก่อนแก้ Mesh แล้ว
+
+### 6 พ.ย. 2026 (00:45–01:30) — ป้าแสง Prefab + G5 คะแนน Rubric/หน้าผล/เล่นใหม่ (แชท M1)
+
+Branch: `feature/gameplay-content-ui`
+
+#### Completed
+
+- **ป้าแสง** (โมเดล Meshy จากแชท M5): `Assets/Gameplay/Characters/AuntSaeng/` · Rig Humanoid (Avatar จาก Idle) · วัสดุ URP Lit (texture สูงสุด 1024) · `AuntSaeng.controller` Idle วน / Wave / Talk (โบกแล้วพูดต่อ) / Agree เมื่อมีไฟล์ · `AuntSaengAnimator.cs` (เข้าพื้นที่ → Wave · ให้ภารกิจ → Talk · ภารกิจสำเร็จ → Agree/Talk · หันหาผู้เล่นในระยะ 3.5 ม.) · วางแทนกล่อง `NPC_GreetingPosition` (ซ่อนไว้) ใต้ `NPC_Mission_M1` · MissionInteractionZone เดิม · เมนู `Setup Aunt Saeng (Prefab)` · 10,241 สามเหลี่ยม
+- **G5 (งาน 7 พ.ย. ทำล่วงหน้า)**: `Scripts/Scoring/RubricScorer.cs` คิดคะแนน Rubric v1 จาก ActionLog (6 หมวด 100 คะแนน · ไก่ดิบ/ไหม้/ไม่เสิร์ฟ = ไม่ผ่าน · ค่าหักรวมไว้ที่ค่าคงที่ต้นไฟล์) · `UI/ResultBoardUI.cs` หน้าผลลอยหน้าผู้เล่น 2.5 วิ หลังเสิร์ฟ (คะแนนรวม ระดับผล 6 หมวด ข้อแนะนำ 4 ข้อ) + ปุ่ม "เล่นใหม่" (XRSimpleInteractable → `SessionManager.StartNewSession()`) · เมนู `Setup Result Board`, `Test Rubric Cases`
+- ชุดทดสอบเก็บวัตถุดิบ: ใช้พริก 3 ลูกแรก (สวนมี 40 ลูก) · ตรวจผักสวนครบ 17 ชนิด
+
+#### Tested
+
+- `Test Rubric Cases` **10/10** (ทำถูก 100 · ไม่ล้างผัก · กะเพราก่อนไก่สุก · ไม่ปิดไฟ · ไก่ดิบ/ไหม้ = ไม่ผ่าน · ขาดวัตถุดิบ · ไม่เสิร์ฟ · คำใบ้ Challenge/Training)
+- `Test Cooking Round` **ผ่าน** · รอบทำถูก 98/100 ผ่านดีมาก (หักทำซ้ำ 2 จากการทดสอบเทซ้ำ) · รอบทำผิด 39/100 ไม่ผ่าน · หน้าผล + เล่นใหม่ ผ่าน
+- ป้าแสงใน Play: ขยับ Idle · เข้าพื้นที่แล้วรับภารกิจได้ (Simulator)
+- ยังไม่ได้ลองกดปุ่มเล่นใหม่ด้วยมือ/เลเซอร์จริง และยังไม่ได้ทดสอบบนแว่น
+
+#### Problems / decisions
+
+- ป้าแสงไม่ขยับรอบแรก: Animator ตั้ง Cull Update Transforms + ขอบเขต Skinned Mesh จาก Meshy ไม่ตรง → เปลี่ยนเป็น Always Animate + Update When Offscreen
+- ไม่มีไฟล์ท่า Agree (มี Idle/Talk/Wave) · ท่า Wave คือไฟล์ Meshy "Idle_15" ตามที่ผู้ใช้ตั้งชื่อโฟลเดอร์
+- รัน `Test Collection Round` กับ `Test Cooking Round` พร้อมกันไม่ได้ (ตัวหนึ่ง Reset ทับอีกตัว) → รันทีละตัว
+- ไฟล์ต้นฉบับ `Docs/Model/` (~120 MB) ไม่ commit
+- คุยกับป้าแสง (AI) เลื่อนไปตามแผนสัปดาห์ C
+
+---
+
 ## Daily entry template
 
 ### วันที่ — หัวข้องาน
