@@ -29,6 +29,7 @@ public static class M1ChiliPlantSetupEditor
     private const int FruitsPerPlant = 4;    // 10 × 4 = 40 ชิ้นจับได้ (90 หนักเกินสำหรับ WebXR)
     private const float RowGap = 0.4f;       // ระยะระหว่าง 2 แถว (แกน X)
     private const string ClonePrefix = "Chili_Pick_";
+    private const string ChiliPrefabPath = "Assets/Gameplay/Prefabs/Ingredients/Chili.prefab";
 
     [Serializable] private class SubData { public string name; public float[] color; public int[] triangles; }
     [Serializable] private class MeshData { public float[] vertices; public SubData[] submeshes; }
@@ -66,31 +67,32 @@ public static class M1ChiliPlantSetupEditor
 
         int perPlant = Mathf.Min(FruitsPerPlant, slots.Count);
 
-        List<IngredientIdentity> all = scene.GetRootGameObjects()
-            .SelectMany(g => g.GetComponentsInChildren<IngredientIdentity>(true))
-            .Where(i => i.IngredientId == ObjectiveManager.ChiliIngredientId)
-            .ToList();
+        // ที่ตั้ง: แปลงดิน GardenBase/Chili เป็นศูนย์กลาง · ลูกพริกอยู่ในกลุ่ม Garden_Blockout/Chili
+        // ลูกพริกที่ขาดสร้างใหม่จาก Chili.prefab (ไม่ต้องพึ่งพริกเดิมในฉาก รันซ้ำได้เสมอ)
+        Transform garden = scene.GetRootGameObjects()
+            .SelectMany(g => g.GetComponentsInChildren<Transform>(true))
+            .FirstOrDefault(t => t.name.Trim() == "Garden_Blockout");
+        Transform bed = garden != null ? garden.Find("GardenBase/Chili") : null;
+        Transform group = garden != null
+            ? garden.Cast<Transform>().FirstOrDefault(t => t.name.Trim() == "Chili")
+            : null;
+        GameObject chiliPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ChiliPrefabPath);
 
-        // รันซ้ำ: ลบพริกที่โคลนไว้รอบก่อน เหลือพริกเดิมของฉาก
-        foreach (IngredientIdentity old in all.Where(i => i.name.StartsWith(ClonePrefix)).ToList())
+        if (garden == null || bed == null || chiliPrefab == null)
         {
-            Undo.DestroyObjectImmediate(old.gameObject);
-        }
-
-        List<IngredientIdentity> chilis = all.Where(i => i != null && !i.name.StartsWith(ClonePrefix))
-            .OrderBy(i => i.name).ToList();
-
-        if (chilis.Count == 0)
-        {
-            Debug.LogError("[ต้นพริก] ไม่พบพริกที่เก็บได้ (IngredientIdentity chili) ในฉาก จึงยกเลิก");
+            Debug.LogError($"[ต้นพริก] ไม่พบ Garden_Blockout, แปลง GardenBase/Chili หรือ {ChiliPrefabPath} จึงยกเลิก");
             return;
         }
 
-        Transform garden = chilis[0].transform.parent != null && chilis[0].transform.parent.parent != null
-            ? chilis[0].transform.parent.parent
-            : chilis[0].transform.parent;
+        if (group == null)
+        {
+            group = new GameObject("Chili").transform;
+            Undo.RegisterCreatedObjectUndo(group.gameObject, "สร้างกลุ่มลูกพริก");
+            group.SetParent(garden, false);
+            group.position = bed.position;
+        }
 
-        Transform previous = garden != null ? garden.Find(RootName) : null;
+        Transform previous = garden.Find(RootName);
         if (previous != null)
         {
             Undo.DestroyObjectImmediate(previous.gameObject);
@@ -100,30 +102,43 @@ public static class M1ChiliPlantSetupEditor
         Undo.RegisterCreatedObjectUndo(root, "สร้างต้นพริก");
         root.transform.SetParent(garden, false);
         root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-        root.transform.localScale = Vector3.one;
         // ตัวแม่อาจมีสเกล จึงตั้งสเกลโลกของกลุ่มเป็น 1
-        Vector3 parentScale = garden != null ? garden.lossyScale : Vector3.one;
+        Vector3 parentScale = garden.lossyScale;
         root.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
 
-        // ศูนย์กลางแปลง = ตำแหน่งกลุ่มพริกเดิม (Garden_Blockout/Chili) ไม่ขยับเมื่อรันซ้ำ · ต้นเรียง 2 แถวตามแกน Z
-        Vector3 center = chilis[0].transform.parent != null
-            ? chilis[0].transform.parent.position
-            : chilis.Aggregate(Vector3.zero, (a, c) => a + c.transform.position) / chilis.Count;
+        Vector3 center = bed.position;
         int perRow = Mathf.CeilToInt(PlantCount / 2f);
         float spacing = 0.26f; // 5 ต้นกินยาว ~1.04 ม. อยู่ในแปลงยาว 1.2 ม.
 
-        // โคลนพริกเพิ่มให้ครบ ต้นละ perPlant ลูก (คัดลอกจากพริกเดิมลูกแรก)
-        IngredientIdentity source = chilis[0];
         int need = PlantCount * perPlant;
+        List<IngredientIdentity> chilis = group.GetComponentsInChildren<IngredientIdentity>(true)
+            .Where(i => i.IngredientId == ObjectiveManager.ChiliIngredientId)
+            .OrderBy(i => i.name.StartsWith(ClonePrefix) ? 1 : 0).ThenBy(i => i.name)
+            .ToList();
+
+        foreach (IngredientIdentity extra in chilis.Skip(need).ToList())
+        {
+            Undo.DestroyObjectImmediate(extra.gameObject);
+        }
+
+        chilis = chilis.Take(need).ToList();
         for (int n = chilis.Count; n < need; n++)
         {
-            GameObject clone = UnityEngine.Object.Instantiate(source.gameObject, source.transform.parent);
-            Undo.RegisterCreatedObjectUndo(clone, "เพิ่มพริกที่เก็บได้");
-            clone.name = $"{ClonePrefix}{n + 1:00}";
-            var cloneId = new SerializedObject(clone.GetComponent<IngredientIdentity>());
-            cloneId.FindProperty("instanceId").stringValue = string.Empty;
-            cloneId.ApplyModifiedPropertiesWithoutUndo();
-            chilis.Add(clone.GetComponent<IngredientIdentity>());
+            var created = (GameObject)PrefabUtility.InstantiatePrefab(chiliPrefab, group);
+            Undo.RegisterCreatedObjectUndo(created, "เพิ่มพริกที่เก็บได้");
+            PrefabUtility.UnpackPrefabInstance(created, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            created.name = $"{ClonePrefix}{n + 1:00}";
+            var id = new SerializedObject(created.GetComponent<IngredientIdentity>());
+            id.FindProperty("instanceId").stringValue = string.Empty;
+            id.ApplyModifiedPropertiesWithoutUndo();
+            var body = created.GetComponent<Rigidbody>();
+            if (body != null)
+            {
+                body.isKinematic = true;   // ห้อยนิ่งบนต้นจนกว่าจะหยิบ (เหมือนพริกเดิม)
+                body.useGravity = false;
+            }
+
+            chilis.Add(created.GetComponent<IngredientIdentity>());
         }
 
         // ปิด Collider ของพริกชั่วคราว เพื่อยิง Ray หาผิวแปลงใต้พริก
