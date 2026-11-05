@@ -110,7 +110,7 @@ public static class M1ChiliPlantSetupEditor
             ? chilis[0].transform.parent.position
             : chilis.Aggregate(Vector3.zero, (a, c) => a + c.transform.position) / chilis.Count;
         int perRow = Mathf.CeilToInt(PlantCount / 2f);
-        float spacing = 0.32f;
+        float spacing = 0.26f; // 5 ต้นกินยาว ~1.04 ม. อยู่ในแปลงยาว 1.2 ม.
 
         // โคลนพริกเพิ่มให้ครบ ต้นละ perPlant ลูก (คัดลอกจากพริกเดิมลูกแรก)
         IngredientIdentity source = chilis[0];

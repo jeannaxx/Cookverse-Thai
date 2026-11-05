@@ -10,7 +10,8 @@ using UnityEngine.SceneManagement;
 // - อ่าน Assets/Gameplay/Art/Models/KrapowModels.json (Tools/ModelGen/krapow_models.py)
 //   สร้าง Mesh M1_KrapowBush.asset / M1_KrapowSprig.asset และวัสดุ M1_Krapow_*.mat
 // - วางพุ่ม BushCount พุ่ม เป็นตาราง Columns × Rows ในแปลงกะเพรา (ตำแหน่งเดิมของ Krapao_Block)
-// - ยอดทุกยอดเก็บได้: พุ่มละ SprigsPerBush ยอด · ใช้ก้อนกะเพราเดิม แล้วโคลนเพิ่ม (Krapow_Pick_NN)
+// - ยอดทุกยอดเก็บได้: พุ่มละ SprigsPerBush ยอด · สร้างจาก Krapow.prefab ไว้ในกลุ่ม KrapowPicks (Krapow_Pick_NN)
+//   ก้อนกะเพราแบบเก่าใต้ Karpao (หลายชิ้นลูก เปลี่ยนหน้าตาไม่ได้) ถูกลบแทนที่
 //   ระบบเก็บ/ล้าง/ใส่กระทะ/Reset เหมือนเดิม · ภารกิจยังต้องการ 1 กำ
 // รันซ้ำได้: ลบพุ่มและยอดที่โคลนไว้เดิมแล้วสร้างใหม่ ที่ตำแหน่งเดิม
 public static class M1KrapowPlantSetupEditor
@@ -21,6 +22,8 @@ public static class M1KrapowPlantSetupEditor
     private const string TemplateMaterialPath = "Assets/Gameplay/Prefabs/Stations/M1_Wood.mat";
     private const string RootName = "KrapowPlants";
     private const string ClonePrefix = "Krapow_Pick_";
+    private const string PicksName = "KrapowPicks";
+    private const string KrapowPrefabPath = "Assets/Gameplay/Prefabs/Ingredients/Krapow.prefab";
 
     private const int Columns = 2;            // แกน X
     private const int Rows = 3;               // แกน Z
@@ -69,54 +72,76 @@ public static class M1KrapowPlantSetupEditor
 
         int perBush = Mathf.Min(SprigsPerBush, slots.Count);
 
-        List<IngredientIdentity> all = scene.GetRootGameObjects()
-            .SelectMany(g => g.GetComponentsInChildren<IngredientIdentity>(true))
-            .Where(i => i.IngredientId == ObjectiveManager.KrapowLeafIngredientId && i.GetComponentInParent<Canvas>() == null)
-            .Where(i => i.transform.parent != null && i.transform.parent.name.Trim() == "Karpao")
-            .ToList();
+        // ยอดที่เก็บได้อยู่ในกลุ่ม KrapowPicks ใต้ Garden_Blockout · สร้างจาก Krapow.prefab ถ้ายังไม่มี/ไม่พอ
+        Transform garden = scene.GetRootGameObjects()
+            .SelectMany(g => g.GetComponentsInChildren<Transform>(true))
+            .FirstOrDefault(t => t.name.Trim() == "Garden_Blockout");
+        GameObject krapowPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(KrapowPrefabPath);
 
-        if (all.Count == 0)
+        if (garden == null || krapowPrefab == null)
         {
-            Debug.LogError("[กะเพรา] ไม่พบกะเพราที่เก็บได้ใต้ Garden_Blockout/Karpao จึงยกเลิก");
+            Debug.LogError($"[กะเพรา] ไม่พบ Garden_Blockout หรือ {KrapowPrefabPath} จึงยกเลิก");
             return;
         }
 
-        Transform bed = all[0].transform.parent;
-        Transform garden = bed.parent != null ? bed.parent : bed;
-
-        // ศูนย์กลางแปลง: รันซ้ำใช้ตำแหน่งกลุ่มพุ่มเดิม · รันครั้งแรกใช้ค่าเฉลี่ยตำแหน่งก้อนกะเพราเดิม
+        // ศูนย์กลางแปลง: ตำแหน่งกลุ่มพุ่มเดิม (KrapowPlants) → ก้อนกะเพราเดิมใต้ Karpao → ตั้งค่าไม่ได้
         Transform previous = garden.Find(RootName);
+        Transform oldBed = garden.Find("Karpao");
         Vector3 center;
         if (previous != null)
         {
             center = previous.position;
             Undo.DestroyObjectImmediate(previous.gameObject);
         }
+        else if (oldBed != null && oldBed.childCount > 0)
+        {
+            center = oldBed.Cast<Transform>().Aggregate(Vector3.zero, (a, c) => a + c.position) / oldBed.childCount;
+        }
         else
         {
-            List<IngredientIdentity> originals = all.Where(i => !i.name.StartsWith(ClonePrefix)).ToList();
-            center = originals.Aggregate(Vector3.zero, (a, c) => a + c.transform.position) / originals.Count;
+            Debug.LogError("[กะเพรา] ไม่รู้ตำแหน่งแปลงกะเพรา (ไม่มี KrapowPlants หรือ Karpao) จึงยกเลิก");
+            return;
         }
 
-        foreach (IngredientIdentity old in all.Where(i => i.name.StartsWith(ClonePrefix)).ToList())
+        // ก้อนกะเพราแบบเก่า (หลายชิ้นลูก) ใต้ Karpao ถูกแทนด้วยยอดใหม่ทั้งหมด
+        if (oldBed != null)
         {
-            Undo.DestroyObjectImmediate(old.gameObject);
+            Undo.DestroyObjectImmediate(oldBed.gameObject);
         }
 
-        List<IngredientIdentity> sprigs = all.Where(i => i != null && !i.name.StartsWith(ClonePrefix))
-            .OrderBy(i => i.transform.GetSiblingIndex()).ToList();
+        Transform picks = garden.Find(PicksName);
+        if (picks == null)
+        {
+            picks = new GameObject(PicksName).transform;
+            Undo.RegisterCreatedObjectUndo(picks.gameObject, "สร้างกลุ่มยอดกะเพรา");
+            picks.SetParent(garden, false);
+            picks.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+        }
 
         int bushCount = Columns * Rows;
-        IngredientIdentity source = sprigs[0];
-        for (int n = sprigs.Count; n < bushCount * perBush; n++)
+        int need = bushCount * perBush;
+        List<IngredientIdentity> sprigs = picks.GetComponentsInChildren<IngredientIdentity>(true)
+            .Where(i => i.IngredientId == ObjectiveManager.KrapowLeafIngredientId)
+            .OrderBy(i => i.name).ToList();
+
+        foreach (IngredientIdentity extra in sprigs.Skip(need).ToList())
         {
-            GameObject clone = UnityEngine.Object.Instantiate(source.gameObject, source.transform.parent);
-            Undo.RegisterCreatedObjectUndo(clone, "เพิ่มยอดกะเพราที่เก็บได้");
-            clone.name = $"{ClonePrefix}{n + 1:00}";
-            var cloneId = new SerializedObject(clone.GetComponent<IngredientIdentity>());
-            cloneId.FindProperty("instanceId").stringValue = string.Empty;
-            cloneId.ApplyModifiedPropertiesWithoutUndo();
-            sprigs.Add(clone.GetComponent<IngredientIdentity>());
+            Undo.DestroyObjectImmediate(extra.gameObject);
+        }
+
+        sprigs = sprigs.Take(need).ToList();
+        for (int n = sprigs.Count; n < need; n++)
+        {
+            var created = (GameObject)PrefabUtility.InstantiatePrefab(krapowPrefab, picks);
+            Undo.RegisterCreatedObjectUndo(created, "เพิ่มยอดกะเพราที่เก็บได้");
+            PrefabUtility.UnpackPrefabInstance(created, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            created.name = $"{ClonePrefix}{n + 1:00}";
+            sprigs.Add(created.GetComponent<IngredientIdentity>());
+        }
+
+        foreach (IngredientIdentity sprig in sprigs)
+        {
+            PrepareSprigObject(sprig.gameObject);
         }
 
         var root = new GameObject(RootName);
@@ -167,6 +192,50 @@ public static class M1KrapowPlantSetupEditor
         EditorSceneManager.SaveScene(scene);
         Debug.Log($"[กะเพรา] วางพุ่มกะเพรา {bushCount} พุ่ม · ยอดที่เก็บได้ {bushCount * perBush} ยอด " +
                   $"(พุ่ม {bushMesh.triangles.Length / 3} สามเหลี่ยม · ยอด {sprigMesh.triangles.Length / 3} สามเหลี่ยม)");
+    }
+
+    // ยอดกะเพราที่เก็บได้ = วัตถุเดียว: ลบชิ้นลูกแบบเก่า (ใบ/ก้านแยกชิ้น) · มี MeshFilter/Renderer/BoxCollider ที่ตัวแม่
+    // อยู่นิ่งบนพุ่มจนกว่าจะหยิบ (kinematic ไม่มีแรงโน้มถ่วง เหมือนวัตถุดิบในสวนเดิม)
+    private static void PrepareSprigObject(GameObject sprig)
+    {
+        for (int c = sprig.transform.childCount - 1; c >= 0; c--)
+        {
+            Undo.DestroyObjectImmediate(sprig.transform.GetChild(c).gameObject);
+        }
+
+        foreach (Collider other in sprig.GetComponents<Collider>().Where(c => !(c is BoxCollider)).ToList())
+        {
+            Undo.DestroyObjectImmediate(other);
+        }
+
+        if (sprig.GetComponent<MeshFilter>() == null) Undo.AddComponent<MeshFilter>(sprig);
+        if (sprig.GetComponent<MeshRenderer>() == null) Undo.AddComponent<MeshRenderer>(sprig);
+        if (sprig.GetComponent<BoxCollider>() == null) Undo.AddComponent<BoxCollider>(sprig);
+
+        var body = sprig.GetComponent<Rigidbody>();
+        if (body != null)
+        {
+            Undo.RecordObject(body, "ตั้งยอดกะเพราให้อยู่นิ่งบนพุ่ม");
+            body.isKinematic = true;
+            body.useGravity = false;
+        }
+
+        // Collider ลูกถูกลบแล้ว ล้างรายการเดิมใน XRGrabInteractable ให้ใช้ Collider ตัวแม่
+        var grab = sprig.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (grab != null)
+        {
+            var grabData = new SerializedObject(grab);
+            SerializedProperty list = grabData.FindProperty("m_Colliders");
+            if (list != null)
+            {
+                list.ClearArray();
+                grabData.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+        var id = new SerializedObject(sprig.GetComponent<IngredientIdentity>());
+        id.FindProperty("instanceId").stringValue = string.Empty;
+        id.ApplyModifiedPropertiesWithoutUndo();
     }
 
     // ยอดกะเพรา: จุดกำเนิดของ Mesh อยู่ที่โคนก้าน · ปักที่ช่องบนพุ่ม ชี้ออกและขึ้น
