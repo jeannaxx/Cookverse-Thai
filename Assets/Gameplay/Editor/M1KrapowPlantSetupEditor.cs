@@ -103,6 +103,13 @@ public static class M1KrapowPlantSetupEditor
             return;
         }
 
+        // มีแปลงดิน GardenBase/Krapao → จัดกึ่งกลางตามแปลง (แกน X/Z) ให้ไม่ล้นขอบแปลงยกพื้น
+        Transform krapaoBed = garden.Find("GardenBase/Krapao");
+        if (krapaoBed != null)
+        {
+            center = new Vector3(krapaoBed.position.x, center.y, krapaoBed.position.z);
+        }
+
         // ก้อนกะเพราแบบเก่า (หลายชิ้นลูก) ใต้ Karpao ถูกแทนด้วยยอดใหม่ทั้งหมด
         if (oldBed != null)
         {

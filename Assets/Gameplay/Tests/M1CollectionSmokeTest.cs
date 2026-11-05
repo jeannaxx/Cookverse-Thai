@@ -86,6 +86,10 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
         starts = ingredients.Select(i => i.transform.position).ToArray();
         Check(chilies.Length == 3 && objective.RequiredChiliCount == 3, "พริกในฉากและเป้าหมายครบ 3");
         Check(ingredients.Select(i => i.InstanceId).Distinct().Count() == ingredients.Length, "รหัสวัตถุดิบแต่ละชิ้นไม่ซ้ำ");
+        string[] gardenIds = { "spring_onion", "coriander", "culantro", "lemongrass", "lime", "galangal", "shallot", "thai_basil", "mint",
+            "thai_eggplant", "pea_eggplant", "chinese_chives", "kaffir_lime_leaf", "green_papaya", "mango", "long_bean", "tomato" };
+        string[] missingGarden = gardenIds.Where(id => ingredients.All(i => i.IngredientId != id)).ToArray();
+        Check(missingGarden.Length == 0, "ผักในสวนเก็บได้ครบ 17 ชนิด" + (missingGarden.Length > 0 ? " ขาด " + string.Join(",", missingGarden) : ""));
         FindFirstObjectByType<MissionGiver>().GiveMission();
         Check(objective.CurrentStepId == ObjectiveManager.CollectGardenStepId, "รับภารกิจผ่านป้าแสง");
 
