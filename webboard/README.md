@@ -32,3 +32,20 @@ src/
 ## Deploy (Netlify)
 
 มี `netlify.toml` แล้ว: build = `npm run build`, publish = `dist` และ redirect ทุก path ไป `index.html`
+
+## โฟลเดอร์และ branch (สำคัญ)
+
+| | โฟลเดอร์บนเครื่อง | branch | GitHub Desktop |
+|---|---|---|---|
+| เกม Unity (M1/M5) | `~/Documents/UnityProjects/Cookverse-Thai` | `feature/gameplay-content-ui` | `Cookverse-Thai-Unity` |
+| เว็บ (WB/AI) | `~/Documents/UnityProjects/Cookverse-Thai-Web` | `feature/web` | `Cookverse-Thai-Web` |
+
+- สลับงานด้วยการ **สลับ Repository** ใน GitHub Desktop — **ห้ามสลับ Branch** ในโฟลเดอร์ใด (ฉาก Unity จะย้อนเป็นเวอร์ชันเก่า)
+- โฟลเดอร์เว็บดึงเฉพาะ `webboard/` และ `Docs/` (sparse checkout) · ไฟล์ Unity บน branch นี้เป็นของเดิมจาก `develop` ห้ามลบ (ตอน merge กลับจะลบโปรเจกต์ Unity)
+- งาน AI/หลังบ้านจะอยู่ใน `webboard/netlify/functions/` (`/api/sessions`, `/api/ai/evaluate`, `/api/ai/aunt`, `/api/ai/menu`)
+
+## กติกาความปลอดภัย
+
+- `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` เก็บใน Environment Variables ของ Netlify เท่านั้น
+- ห้ามใส่ key ในโค้ด ในเกม Unity ในแชท หรือ commit (`.env` ถูก ignore ไว้แล้ว)
+- เกมต้องเล่นจบได้เสมอแม้หลังบ้านหรือ AI ล่ม (ส่งไม่สำเร็จ → เก็บในเครื่องแล้วส่งซ้ำ)
