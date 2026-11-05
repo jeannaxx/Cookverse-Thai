@@ -882,6 +882,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 40928969}
   m_Mesh: {fileID: 4300000, guid: 63d2b9a3de1ff41a2bab2be0a0797870, type: 2}
+--- !u!1001 &41524886
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1815746383}
+    m_Modifications:
+    - target: {fileID: 1474454034868737024, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_Name
+      value: AuntSaeng
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.34326014
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.51460004
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.28990874
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9570543
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+--- !u!4 &41524887 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2251096733499936442, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+  m_PrefabInstance: {fileID: 41524886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &41524888 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8480626377201947615, guid: 48e058137991f430ab5f5d5d5a7f6fb4, type: 3}
+  m_PrefabInstance: {fileID: 41524886}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3cc64054e35f481da7c35da37a37ec2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AuntSaengAnimator
 --- !u!1 &43331111
 GameObject:
   m_ObjectHideFlags: 0
@@ -6120,7 +6193,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -6131,7 +6204,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 356317950}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -27794,6 +27867,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1917781523}
+  - {fileID: 41524887}
   m_Father: {fileID: 87758750}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1815746384
@@ -27812,7 +27886,19 @@ MonoBehaviour:
   missionManager: {fileID: 1748174851}
   onMissionRequested:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 41524888}
+        m_TargetAssemblyTypeName: AuntSaengAnimator, Assembly-CSharp
+        m_MethodName: PlayTalk
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &1816250801
 GameObject:
   m_ObjectHideFlags: 0
@@ -28811,7 +28897,19 @@ MonoBehaviour:
   playerInside: 0
   onPlayerEntered:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 41524888}
+        m_TargetAssemblyTypeName: AuntSaengAnimator, Assembly-CSharp
+        m_MethodName: PlayWave
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onPlayerExited:
     m_PersistentCalls:
       m_Calls: []
