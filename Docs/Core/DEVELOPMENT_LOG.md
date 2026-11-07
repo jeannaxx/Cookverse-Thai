@@ -837,3 +837,9 @@ Branch / commit:
 #### Next work
 
 - 
+
+## 8 พ.ย. 2026 (00:30) — นำเข้าโมเดลครัวจาก Meshy (แชท M5)
+- ไฟล์ต้นฉบับอยู่ `Docs/Model/Kitchen/` (ไม่ commit) → คัด FBX + Base Color มาไว้ `Assets/XR-Web/Art/Kitchen/<ชื่อ>/` 15 ชิ้น: Wok, Mortar, Spatula, Board, Cleaver, ChefKnife, Plate, Bowl, Tray, Pot, PotLid, Stove, Rack, Sink, Fork (Texture ย่อเหลือ 1024)
+- `M5KitchenModelsEditor.cs` เมนู Tools › Cookverse Thai › M5 › Kitchen: 1) Build Prefabs (URP Lit, จุดหมุนกลางฐาน) 2) Dress Kitchen — วางโมเดลทับวัตถุเดิมตามชื่อ ซ่อนแค่ Renderer (Collider/สคริปต์ M1 ยังทำงาน) 3) Undress — ถอดคืน
+- ของหยิบได้ (Spatula_Grabbable, Kitchen_Knife, Serving_Plate) โมเดลเป็นลูก ขยับตามมือ; ถ้า M1 รันเมนูสร้างสถานีใหม่ ต้องกด Dress ซ้ำ
+- ยังไม่มี: สาก ช้อน ขวดเครื่องปรุง · Rack/Fork ทำ Prefab ไว้แต่ยังไม่วาง
