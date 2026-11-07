@@ -13,6 +13,7 @@ public static class M5CountrysideEditor
 {
     private const string RootName = "Countryside_M5";
     private const string ArtFolder = "Assets/XR-Web/Art/Countryside";
+    private const float FenceMargin = 2f; // ระยะรั้ว/กำแพงล่องหนจากขอบบ้าน+สวน (ม.) · ปรับตรงนี้
 
     [MenuItem("Tools/Cookverse Thai/M5/Setup Countryside (Free)")]
     private static void Setup()
@@ -36,7 +37,9 @@ public static class M5CountrysideEditor
         Material far = GetMat("Far_Ground", new Color(0.42f, 0.60f, 0.27f));
         Material trunk = GetMat("Palm_Trunk", new Color(0.46f, 0.34f, 0.23f));
         Material frond = GetMat("Palm_Frond", new Color(0.24f, 0.50f, 0.19f));
-        Material hill = GetMat("Hill", new Color(0.33f, 0.47f, 0.38f));
+        // ภูเขา: ใกล้ = เขียวอ่อน · ไกล = ฟ้าอมเทาจาง (ยกด้านเงาด้วย Emission ไม่ให้มืด)
+        Material hillNear = GetMat("Hill_Near", new Color(0.52f, 0.70f, 0.45f), 0f, 0.45f);
+        Material hillFar = GetMat("Hill_Far", new Color(0.62f, 0.74f, 0.82f), 0f, 0.6f);
         Material cloud = GetMat("Cloud", new Color(1f, 1f, 1f));
 
         var root = new GameObject(RootName);
@@ -87,17 +90,23 @@ public static class M5CountrysideEditor
             }
         }
 
-        // ภูเขาไกล (หมอกจะทำให้จางเป็นเงาฟ้า)
+        // ภูเขา 2 ชั้น: เนินเขียวใกล้ + ภูเขาฟ้าไกล (หมอกช่วยให้จางเป็นธรรมชาติ)
         var hills = new GameObject("Hills");
         hills.transform.SetParent(root.transform, false);
-        const int hillCount = 14;
-        for (int i = 0; i < hillCount; i++)
+        const int hillCount = 12;
+        const int farCount = 10;
+        for (int i = 0; i < hillCount + farCount; i++)
         {
-            float ang = (i * 360f / hillCount + (float)rnd.NextDouble() * 15f) * Mathf.Deg2Rad;
-            float dist = 190f + (float)rnd.NextDouble() * 40f;
-            var h = Prim(PrimitiveType.Sphere, "Hill", hills.transform, hill);
-            h.transform.position = new Vector3(center.x + Mathf.Cos(ang) * dist, paddyY - 4f, center.y + Mathf.Sin(ang) * dist);
-            h.transform.localScale = new Vector3(50f + (float)rnd.NextDouble() * 40f, 18f + (float)rnd.NextDouble() * 18f, 30f + (float)rnd.NextDouble() * 20f);
+            bool isFar = i >= hillCount;
+            int n = isFar ? farCount : hillCount;
+            int idx = isFar ? i - hillCount : i;
+            float ang = (idx * 360f / n + (isFar ? 18f : 0f) + (float)rnd.NextDouble() * 15f) * Mathf.Deg2Rad;
+            float dist = isFar ? 235f + (float)rnd.NextDouble() * 30f : 160f + (float)rnd.NextDouble() * 25f;
+            var h = Prim(PrimitiveType.Sphere, isFar ? "Mountain_Far" : "Hill_Near", hills.transform, isFar ? hillFar : hillNear);
+            h.transform.position = new Vector3(center.x + Mathf.Cos(ang) * dist, paddyY - (isFar ? 6f : 4f), center.y + Mathf.Sin(ang) * dist);
+            h.transform.localScale = isFar
+                ? new Vector3(80f + (float)rnd.NextDouble() * 50f, 45f + (float)rnd.NextDouble() * 30f, 40f + (float)rnd.NextDouble() * 20f)
+                : new Vector3(45f + (float)rnd.NextDouble() * 35f, 14f + (float)rnd.NextDouble() * 12f, 28f + (float)rnd.NextDouble() * 18f);
             h.transform.rotation = Quaternion.Euler(0f, ang * Mathf.Rad2Deg, 0f);
         }
 
@@ -119,6 +128,24 @@ public static class M5CountrysideEditor
             CreatePalm(palms.transform, new Vector3(pos.x, paddyY, pos.y), rnd, trunk, frond);
             palmCount++;
         }
+
+        // ขอบเขตเดิน: พื้นรองรับกันตกแมพ + กำแพงล่องหน + รั้วไม้ไผ่ให้เห็นแนว
+        var boundary = new GameObject("Boundary");
+        boundary.transform.SetParent(root.transform, false);
+        var safety = boundary.AddComponent<BoxCollider>();
+        safety.center = new Vector3(center.x, paddyY - 0.5f, center.y);
+        safety.size = new Vector3(600f, 1f, 600f);
+
+        const float wallH = 3f, wallT = 0.4f;
+        float minX = play.min.x - FenceMargin, maxX = play.max.x + FenceMargin;
+        float minZ = play.min.z - FenceMargin, maxZ = play.max.z + FenceMargin;
+        AddWall(boundary.transform, new Vector3((minX + maxX) * 0.5f, paddyY + wallH * 0.5f, minZ), new Vector3(maxX - minX + wallT, wallH, wallT));
+        AddWall(boundary.transform, new Vector3((minX + maxX) * 0.5f, paddyY + wallH * 0.5f, maxZ), new Vector3(maxX - minX + wallT, wallH, wallT));
+        AddWall(boundary.transform, new Vector3(minX, paddyY + wallH * 0.5f, (minZ + maxZ) * 0.5f), new Vector3(wallT, wallH, maxZ - minZ + wallT));
+        AddWall(boundary.transform, new Vector3(maxX, paddyY + wallH * 0.5f, (minZ + maxZ) * 0.5f), new Vector3(wallT, wallH, maxZ - minZ + wallT));
+
+        // แทนรั้ว: ป้ายเตือนเมื่อเดินใกล้ขอบ (รั้วรอบตัวทำให้รู้สึกถูกขัง)
+        boundary.AddComponent<BoundaryHint>().Configure(Rect.MinMaxRect(minX, minZ, maxX, maxZ), 1.2f);
 
         // เมฆการ์ตูน: ก้อนกลมโพลีกอนต่ำ (~120 สามเหลี่ยม/ก้อน) หลายก้อนรวมเป็นเมฆ ลอยหมุนช้า ๆ
         var clouds = new GameObject("Clouds");
@@ -163,7 +190,7 @@ public static class M5CountrysideEditor
         RenderSettings.fogMode = FogMode.Linear;
         RenderSettings.fogColor = new Color(0.78f, 0.85f, 0.88f);
         RenderSettings.fogStartDistance = 45f;
-        RenderSettings.fogEndDistance = 260f;
+        RenderSettings.fogEndDistance = 330f;
         DynamicGI.UpdateEnvironment();
 
         int tris = 0;
@@ -176,7 +203,7 @@ public static class M5CountrysideEditor
         }
 
         EditorSceneManager.MarkSceneDirty(root.scene);
-        Debug.Log($"[ชนบท] สร้างแล้ว: แปลงนา {tiles} · มะพร้าว {palmCount} · ภูเขา {hillCount} · เมฆ {cloudCount} · รวม ~{tris:N0} สามเหลี่ยม · พื้นที่เล่น {play.size.x:0.#}×{play.size.z:0.#} ม. · ระดับพื้น {groundY:0.##} · อย่าลืม Cmd+S");
+        Debug.Log($"[ชนบท] สร้างแล้ว: แปลงนา {tiles} · มะพร้าว {palmCount} · ภูเขา {hillCount}+{farCount} · เมฆ {cloudCount} · ป้ายเตือนขอบ + กำแพงล่องหน {play.size.x + FenceMargin * 2f:0.#}×{play.size.z + FenceMargin * 2f:0.#} ม. · รวม ~{tris:N0} สามเหลี่ยม · พื้นที่เล่น {play.size.x:0.#}×{play.size.z:0.#} ม. · ระดับพื้น {groundY:0.##} · อย่าลืม Cmd+S");
     }
 
     [MenuItem("Tools/Cookverse Thai/M5/Remove Countryside")]
@@ -193,6 +220,40 @@ public static class M5CountrysideEditor
         DynamicGI.UpdateEnvironment();
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Debug.Log("[ชนบท] ลบฉากชนบทแล้ว คืนท้องฟ้าเดิม ปิดหมอก");
+    }
+
+    private static void AddWall(Transform parent, Vector3 center, Vector3 size)
+    {
+        var w = new GameObject("InvisibleWall");
+        w.transform.SetParent(parent, false);
+        var bc = w.AddComponent<BoxCollider>();
+        bc.center = center;
+        bc.size = size;
+    }
+
+    // รั้วไม้ไผ่เตี้ย: เสาทุก 2.5 ม. + ราว 2 เส้น (ไม่มี Collider ใช้กำแพงล่องหนกันแทน)
+    private static int FenceLine(Transform parent, Vector3 a, Vector3 b, Material mat)
+    {
+        Vector3 dir = b - a;
+        float len = dir.magnitude;
+        int n = Mathf.Max(1, Mathf.RoundToInt(len / 2.5f));
+        for (int i = 0; i <= n; i++)
+        {
+            var post = Prim(PrimitiveType.Cylinder, "Post", parent, mat);
+            post.transform.position = a + dir * (i / (float)n) + Vector3.up * 0.45f;
+            post.transform.localScale = new Vector3(0.08f, 0.45f, 0.08f);
+        }
+
+        Quaternion rot = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        foreach (float y in new[] { 0.35f, 0.7f })
+        {
+            var rail = Prim(PrimitiveType.Cube, "Rail", parent, mat);
+            rail.transform.position = (a + b) * 0.5f + Vector3.up * y;
+            rail.transform.rotation = rot;
+            rail.transform.localScale = new Vector3(0.05f, 0.05f, len);
+        }
+
+        return n + 1;
     }
 
     private static void CreatePalm(Transform parent, Vector3 pos, System.Random rnd, Material trunkMat, Material frondMat)
@@ -300,7 +361,7 @@ public static class M5CountrysideEditor
         return best == float.MaxValue ? 0f : best;
     }
 
-    private static Material GetMat(string name, Color color, float smooth = 0f)
+    private static Material GetMat(string name, Color color, float smooth = 0f, float emission = 0f)
     {
         string path = $"{ArtFolder}/{name}.mat";
         var m = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -314,6 +375,12 @@ public static class M5CountrysideEditor
         if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color);
         if (m.HasProperty("_Color")) m.SetColor("_Color", color);
         if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
+        if (emission > 0f && m.HasProperty("_EmissionColor"))
+        {
+            m.EnableKeyword("_EMISSION");
+            m.SetColor("_EmissionColor", color * emission);
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+        }
         EditorUtility.SetDirty(m);
         return m;
     }
