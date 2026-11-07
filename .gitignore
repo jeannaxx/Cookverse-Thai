@@ -114,3 +114,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# M5: ไฟล์ต้นฉบับ Meshy (ของที่ใช้จริงอยู่ใน Assets/XR-Web/Art/Kitchen)
+Docs/Model/Kitchen/
