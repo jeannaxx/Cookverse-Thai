@@ -792,6 +792,27 @@ Branch: `feature/xr-webxr-integration` (โฟลเดอร์ Unity อยู
 
 ---
 
+### 7 พ.ย. 2026 (20:45) — ฉากชนบทรอบบ้านแบบฟรี (แชท M5)
+
+Branch: `feature/gameplay-content-ui` (= `develop` `98adda2`) · ยังไม่ commit
+
+#### Completed
+
+- `Assets/XR-Web/Editor/M5CountrysideEditor.cs` เมนู **Tools › Cookverse Thai › M5 › Setup Countryside (Free)** / **Remove Countryside**
+  - ท้องฟ้า `Skybox/Procedural` (ไม่ต้องโหลดภาพ) + หมอก Linear 45–260 ม. ให้ขอบพื้นกลืนกับฟ้า
+  - แปลงนารอบบ้าน (Quad 14×10 ม. รัศมี 110 ม. สีกล้า/เขียว/ทอง/น้ำขัง) + คันนา + พื้นไกล 700 ม. + ภูเขาไกล 14 ลูก + ต้นมะพร้าวทรงเรียบง่าย 28 ต้น
+  - คำนวณขอบเขตบ้าน/สวนจาก Renderer ในฉาก ไม่วางทับพื้นที่เล่น (+2 ม.) · ไม่มี Collider · Batching Static · วัสดุ URP Lit สีล้วน + GPU Instancing ที่ `Assets/XR-Web/Art/Countryside/`
+  - กดซ้ำได้ (ลบ `Countryside_M5` เก่าก่อน) · Remove คืนท้องฟ้าเดิมและปิดหมอก
+  - เพิ่มเมฆการ์ตูน 16 ก้อน (ก้อนกลมโพลีกอนต่ำ 120 สามเหลี่ยม mesh ร่วม `CloudPuff.asset`) สูง 40–65 ม. ห่าง 70–170 ม. · `Assets/XR-Web/Scripts/CloudDrift.cs` หมุนกลุ่มเมฆ 0.35°/วิ (เมฆไม่ตั้ง Static)
+  - รันแล้วใน `MainVR` (แปลงนา 268 · ~22K สามเหลี่ยม ก่อนเพิ่มเมฆ) · ใน `MainVR` ยังไม่มีสวน → รันซ้ำหลังย้ายสวนเข้า 9 พ.ย.
+
+#### Next work
+
+- รันเมนูใน `GameplayTest_M1` และ `MainVR` → Cmd+S · Build v10 เช็กความลื่นในแว่น (ถ้ากระตุก ลดรัศมีแปลงนา/จำนวนมะพร้าว)
+- ภายหลัง: เปลี่ยนท้องฟ้าเป็นภาพ 360° ทุ่งนา หรือมะพร้าว/ควายจาก Meshy
+
+---
+
 ## Daily entry template
 
 ### วันที่ — หัวข้องาน
