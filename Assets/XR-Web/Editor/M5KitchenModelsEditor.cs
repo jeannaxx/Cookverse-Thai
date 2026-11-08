@@ -32,19 +32,22 @@ public static class M5KitchenModelsEditor
         public string[] hideExtra;    // วัตถุอื่นในฉากที่ต้องซ่อนด้วย
         public Vector3 wideDir;       // ปลายที่กว้างกว่า (ใบมีด/ตัวกระทะ) หันไปทางไหนในแกนของ target
         public float fill = 0.95f;
+        // true = ย่อขยายตามด้านยาวสุดของกล่อง (ด้านบางล้นได้) · ใช้กับของยาวที่กล่องเดิมบางมาก
+        // (ตะหลิว มีด จาน) ไม่งั้นโมเดลถูกย่อตามด้านที่บางจนเล็กเกินจริง (แก้ 8 พ.ย. แชท M1)
+        public bool byLength;
     }
 
     private static readonly Slot[] Slots =
     {
         // ของแขวนผนัง
-        new Slot { model = "Wok", target = "Wok_Handing", fit = Fit.Free, wideDir = Vector3.down },
-        new Slot { model = "Spatula", target = "Spatula__Hanging", fit = Fit.Free, wideDir = Vector3.down },
+        new Slot { model = "Wok", target = "Wok_Handing", fit = Fit.Free, wideDir = Vector3.down, byLength = true },
+        new Slot { model = "Spatula", target = "Spatula__Hanging", fit = Fit.Free, wideDir = Vector3.down, byLength = true },
         // บนเคาน์เตอร์
         new Slot { model = "Pot", target = "Pot_OnCounter", fit = Fit.Counter },
         new Slot { model = "PotLid", target = "Pot_OnCounter", fit = Fit.OnTop },
         new Slot { model = "Stove", target = "GasStove", fit = Fit.Counter },
         new Slot { model = "Board", target = "CuttingBoard", fit = Fit.Counter },
-        new Slot { model = "Cleaver", target = "Knife ", fit = Fit.Free, wideDir = Vector3.right },
+        new Slot { model = "Cleaver", target = "Knife ", fit = Fit.Free, wideDir = Vector3.right, byLength = true },
         new Slot { model = "Mortar", target = "Mortar ", fit = Fit.Counter },
         new Slot { model = "Pestle", target = "Mortar ", fit = Fit.InMortar, wideDir = Vector3.down },
         new Slot { model = "Plate", target = "Plates", fit = Fit.Counter },
@@ -52,9 +55,11 @@ public static class M5KitchenModelsEditor
         new Slot { model = "Tray", target = "ServingTray", fit = Fit.Counter },
         new Slot { model = "Sink", target = "WashingCounter", fit = Fit.Counter, hideExtra = new[] { "Sink " }, fill = 1f },
         // ของที่หยิบได้ (GameplayTest_M1) — โมเดลเป็นลูกของตัวหยิบ จึงขยับตามมือ
-        new Slot { model = "Spatula", target = "Spatula_Grabbable", fit = Fit.Free, measure = new[] { "Handle", "Blade" }, wideDir = Vector3.up },
-        new Slot { model = "ChefKnife", target = "Kitchen_Knife", fit = Fit.Free, measure = new[] { "Knife_Handle", "Knife_Blade" }, wideDir = Vector3.right },
-        new Slot { model = "Plate", target = "Serving_Plate", fit = Fit.Counter, measure = new[] { "Plate" } },
+        new Slot { model = "Spatula", target = "Spatula_Grabbable", fit = Fit.Free, measure = new[] { "Handle", "Blade" }, wideDir = Vector3.up, byLength = true },
+        new Slot { model = "ChefKnife", target = "Kitchen_Knife", fit = Fit.Free, measure = new[] { "Knife_Handle", "Knife_Blade" }, wideDir = Vector3.right, byLength = true },
+        new Slot { model = "Plate", target = "Serving_Plate", fit = Fit.Counter, measure = new[] { "Plate" }, byLength = true },
+        // เขียงที่ใช้หั่นจริง (สถานีหั่นของ M1) — เพิ่ม 9 พ.ย. แชท M1
+        new Slot { model = "Board", target = "CuttingBoard_Station", fit = Fit.Counter, byLength = true },
     };
 
     // ---------------------------------------------------------------- 1) Prefabs
@@ -408,6 +413,12 @@ public static class M5KitchenModelsEditor
             {
                 k2 = Mathf.Min(k2, ts[perm[i]] / ms[i]);
             }
+        }
+
+        if (s.byLength)
+        {
+            int longModel = Order(ms)[0];
+            k2 = ts[perm[longModel]] / Mathf.Max(ms[longModel], 1e-5f);
         }
 
         k2 *= s.fill;
