@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 
-// กฎลำดับการปรุงผัดกะเพราไก่ (GAMEPLAY_CONTENT_V1 "ลำดับการปรุงที่ระบบกฎตรวจ")
-// น้ำมัน → กระเทียม+พริก → คน → ไก่ → (ไก่สุก) → ซอสหอยนางรม น้ำปลา น้ำตาล → ใบกะเพรา → คน
-// ใส่ผิดลำดับยังใส่ได้ Evaluate คืนรหัสข้อผิดพลาดไว้บันทึก ActionLog และคิดคะแนนตาม Rubric
+// ตรวจลำดับการปรุงตามกฎของเมนู (MenuDefinition.orderRules) · ใส่ผิดลำดับยังใส่ได้
+// Evaluate คืนรหัสข้อผิดพลาดไว้บันทึก ActionLog และคิดคะแนน Rubric · คืน null ถ้าลำดับถูก
+// รหัสด้านล่างเป็นของผัดกะเพราไก่ (คงชื่อเดิมให้ชุดทดสอบ/บันทึกเดิมใช้ได้) · เมนูอื่นตั้งรหัสเองในข้อมูลเมนู
 public class CookingOrder
 {
     public const string AromaticsBeforeOil = "aromatics_before_oil";
@@ -15,100 +16,65 @@ public class CookingOrder
     public const string KrapowBeforeSauce = "krapow_before_sauce";
     public const string Duplicate = "duplicate";
 
-    private static readonly string[] Sauces =
-    {
-        ObjectiveManager.OysterSauceIngredientId,
-        ObjectiveManager.FishSauceIngredientId,
-        ObjectiveManager.SugarIngredientId
-    };
-
     private readonly HashSet<string> added = new();
+    private readonly HashSet<string> stirsDone = new();
+    private MenuDefinition menu;
 
-    public bool AromaticsStirred { get; set; }
-    public bool ChickenCooked { get; set; }
-    public bool FinalStirred { get; set; }
+    public MenuDefinition Menu
+    {
+        get => menu != null ? menu : MenuCatalog.KrapowChicken();
+        set => menu = value;
+    }
 
     public IReadOnlyCollection<string> Added => added;
     public bool Has(string ingredientId) => added.Contains(ingredientId);
+    public bool StirDone(string stirId) => stirsDone.Contains(stirId);
+    public void MarkStir(string stirId) => stirsDone.Add(stirId);
 
-    public bool AromaticsInPan =>
-        Has(ObjectiveManager.GarlicIngredientId) && Has(ObjectiveManager.ChiliIngredientId);
+    // วัตถุดิบหลักของเมนู (เช่นไก่) สุกแล้ว
+    public bool MainCooked { get; set; }
+    // เมนูต้ม: น้ำเดือดแล้ว · ระดับไฟตอนใส่ (PanContents ตั้งก่อนเรียก Evaluate)
+    public bool Boiling { get; set; }
+    public int HeatLevel { get; set; }
+    public bool ChickenCooked { get => MainCooked; set => MainCooked = value; }   // ชื่อเดิม
 
-    public bool AllSaucesAdded
-    {
-        get
-        {
-            foreach (string sauce in Sauces)
-            {
-                if (!Has(sauce))
-                {
-                    return false;
-                }
-            }
+    public void MarkAdded(string ingredientId) => added.Add(ingredientId);
 
-            return true;
-        }
-    }
-
-    // เรียกก่อน MarkAdded · คืน null ถ้าลำดับถูก
+    // เรียกก่อน MarkAdded
     public string Evaluate(string ingredientId)
     {
-        switch (ingredientId)
+        foreach (OrderRule r in Menu.orderRules.Where(r => r.ingredientId == ingredientId))
         {
-            case ObjectiveManager.GarlicIngredientId:
-            case ObjectiveManager.ChiliIngredientId:
-                if (!Has(ObjectiveManager.CookingOilIngredientId)) return AromaticsBeforeOil;
-                if (Has(ObjectiveManager.ChickenIngredientId)) return AromaticsAfterChicken;
-                return null;
-
-            case ObjectiveManager.ChickenIngredientId:
-                if (!Has(ObjectiveManager.CookingOilIngredientId)) return ChickenBeforeOil;
-                if (!AromaticsInPan) return ChickenBeforeAromatics;
-                if (!AromaticsStirred) return ChickenBeforeStir;
-                return null;
-
-            case ObjectiveManager.OysterSauceIngredientId:
-            case ObjectiveManager.FishSauceIngredientId:
-            case ObjectiveManager.SugarIngredientId:
-                return ChickenCooked ? null : SauceBeforeChickenCooked;
-
-            case ObjectiveManager.KrapowLeafIngredientId:
-                if (!ChickenCooked) return KrapowBeforeChickenCooked;
-                if (!AllSaucesAdded) return KrapowBeforeSauce;
-                return null;
-
-            default:
-                return null;
+            if (r.forbidsAdded != null && r.forbidsAdded.Any(Has)) return r.mistakeCode;
+            if (r.requiresAdded != null && !r.requiresAdded.All(Has)) return r.mistakeCode;
+            if (!string.IsNullOrEmpty(r.requiresStir) && !StirDone(r.requiresStir)) return r.mistakeCode;
+            if (r.requiresMainCooked && !MainCooked) return r.mistakeCode;
+            if (r.requiresBoiling && !Boiling) return r.mistakeCode;
+            if (r.requiresHeatOff && HeatLevel > 0) return r.mistakeCode;
         }
+        return null;
     }
 
-    public void MarkAdded(string ingredientId)
-    {
-        added.Add(ingredientId);
-    }
+    // จุดคนถัดไปที่ทำได้ตอนนี้ (ยังไม่ได้คน และใส่ของที่ต้องมีครบแล้ว) · null = คนเฉย ๆ
+    public StirCheckpoint NextStir() =>
+        Menu.stirCheckpoints.FirstOrDefault(s => !StirDone(s.stirId) && (s.afterAdded == null || s.afterAdded.All(Has)));
+
+    public IEnumerable<StirCheckpoint> MissingStirs() => Menu.stirCheckpoints.Where(s => !StirDone(s.stirId));
 
     public void Clear()
     {
         added.Clear();
-        AromaticsStirred = false;
-        ChickenCooked = false;
-        FinalStirred = false;
+        stirsDone.Clear();
+        MainCooked = false;
+        Boiling = false;
+        HeatLevel = 0;
     }
 
-    public static string DescribeThai(string code)
+    public string Describe(string code)
     {
-        return code switch
-        {
-            AromaticsBeforeOil => "ควรใส่น้ำมันก่อนเครื่องหอม",
-            AromaticsAfterChicken => "ควรผัดกระเทียมกับพริกก่อนใส่ไก่",
-            ChickenBeforeOil => "ใส่ไก่ก่อนน้ำมัน ควรใส่น้ำมันก่อน",
-            ChickenBeforeAromatics => "ควรใส่กระเทียมและพริกก่อนไก่",
-            ChickenBeforeStir => "ควรคนเครื่องหอมให้หอมก่อนใส่ไก่",
-            SauceBeforeChickenCooked => "ควรรอให้ไก่สุกก่อนปรุงรส",
-            KrapowBeforeChickenCooked => "ใส่ใบกะเพราก่อนไก่สุก ควรใส่เป็นลำดับท้าย",
-            KrapowBeforeSauce => "ควรปรุงรสให้ครบก่อนใส่ใบกะเพรา",
-            Duplicate => "ใส่ซ้ำ",
-            _ => code
-        };
+        OrderRule rule = Menu.RuleFor(code);
+        return rule != null && !string.IsNullOrEmpty(rule.warnThai) ? rule.warnThai : DescribeThai(code);
     }
+
+    public static string DescribeThai(string code) => code == Duplicate ? "ใส่ซ้ำ" : code;
 }

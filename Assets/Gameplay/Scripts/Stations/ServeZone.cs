@@ -79,7 +79,9 @@ public class ServeZone : MonoBehaviour, IMissionResettable
             if (!warnedEmpty)
             {
                 warnedEmpty = true;
-                Show("จานยังว่าง ตักผัดกะเพราใส่จานก่อนนะ", false);
+                Show(objectiveManager != null && objectiveManager.Menu.vessel == CookVessel.Pot
+                    ? $"ชามยังว่าง ตัก{objectiveManager.Menu.nameThai}ใส่ชามก่อนนะ"
+                    : "จานยังว่าง ตักผัดกะเพราใส่จานก่อนนะ", false);
             }
 
             return false;

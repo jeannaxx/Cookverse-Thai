@@ -67,6 +67,11 @@ public sealed class M1CollectionSmokeTest : MonoBehaviour
     private IEnumerator Run()
     {
         objective = FindFirstObjectByType<ObjectiveManager>();
+        // ชุดทดสอบนี้เป็นของผัดกะเพรา: ถ้าฉากตั้งเมนูอื่นไว้ ให้สลับกลับก่อน (ไม่แก้ฉากที่บันทึก)
+        if (objective != null && objective.Menu.menuId != MenuCatalog.KrapowChickenId)
+        {
+            objective.SetMenu(MenuCatalog.KrapowChicken());
+        }
         ingredients = FindObjectsByType<IngredientIdentity>(FindObjectsInactive.Exclude);
         // สวนมีพริกที่เก็บได้ 40 ลูก (ต้นละ 4) · ภารกิจใช้ 3 ลูก → ทดสอบกับ 3 ลูกแรก
         var allChilies = ingredients.Where(i => i.IngredientId == "chili").ToArray();

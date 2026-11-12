@@ -60,6 +60,11 @@ public sealed class M1CookingSmokeTest : MonoBehaviour
     private IEnumerator Run()
     {
         objective = FindAnyObjectByType<ObjectiveManager>();
+        // ชุดทดสอบนี้เป็นของผัดกะเพรา: ถ้าฉากตั้งเมนูอื่นไว้ ให้สลับกลับก่อน (ไม่แก้ฉากที่บันทึก)
+        if (objective != null && objective.Menu.menuId != MenuCatalog.KrapowChickenId)
+        {
+            objective.SetMenu(MenuCatalog.KrapowChicken());
+        }
         pan = FindAnyObjectByType<PanContents>();
         stove = FindAnyObjectByType<GasStove>();
         spatula = FindAnyObjectByType<SpatulaStirrer>();

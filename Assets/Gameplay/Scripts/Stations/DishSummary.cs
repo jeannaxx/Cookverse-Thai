@@ -8,6 +8,7 @@ public class DishSummary
     public IngredientState ChickenState = IngredientState.Raw;
     public int OrderMistakes;
     public readonly List<string> Missing = new();
+    public MenuDefinition Menu;
 
     public bool ChickenCooked => ChickenState == IngredientState.Cooked || ChickenState == IngredientState.Served;
     public bool ChickenBurned => ChickenState == IngredientState.Burned;
@@ -23,19 +24,28 @@ public class DishSummary
     {
         var issues = new List<string>();
 
-        if (ChickenBurned) issues.Add("ไก่ไหม้");
-        else if (!ChickenCooked) issues.Add("ไก่ยังไม่สุก");
+        string main = Menu != null ? (Menu.DisplayName(Menu.mainIngredientId) ?? "ไก่") : "ไก่";
+        string burned = Menu != null && !string.IsNullOrEmpty(Menu.burnedWordThai) ? Menu.burnedWordThai : "ไหม้";
+        if (ChickenBurned) issues.Add(main + burned);
+        else if (!ChickenCooked) issues.Add(main + "ยังไม่สุก");
         if (HeatLevel > 0) issues.Add("ยังไม่ได้ปิดเตา");
 
         var missingThai = new List<string>();
         foreach (string id in Missing)
         {
-            string name = ThaiName(id);
+            string name = Menu != null ? (Menu.DisplayName(id) ?? StirThai(id) ?? ThaiName(id)) : ThaiName(id);
             if (!string.IsNullOrEmpty(name)) missingThai.Add(name);
         }
 
         if (missingThai.Count > 0) issues.Add("ขาด" + string.Join(" ", missingThai));
         return string.Join(" · ", issues);
+    }
+
+    private string StirThai(string id)
+    {
+        foreach (StirCheckpoint stir in Menu.stirCheckpoints)
+            if (stir.stirId == id) return ThaiName(id) != id ? ThaiName(id) : "การคน";
+        return null;
     }
 
     private static string ThaiName(string id)

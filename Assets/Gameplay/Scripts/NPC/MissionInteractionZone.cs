@@ -99,6 +99,14 @@ public class MissionInteractionZone : MonoBehaviour
             return;
         }
 
+        // ยังไม่ได้ใส่ชื่อ/เลือกเมนูที่กระดานเริ่ม
+        if (StartBoardUI.IsOpen)
+        {
+            CollectionFeedbackUI feedback = FindAnyObjectByType<CollectionFeedbackUI>();
+            if (feedback != null) feedback.ShowStationMessage("ใส่ชื่อและเลือกเมนูที่กระดานก่อนนะจ๊ะ", false);
+            return;
+        }
+
         missionGiver.GiveMission();
     }
 

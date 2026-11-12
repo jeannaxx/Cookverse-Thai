@@ -44,10 +44,11 @@ public class SeasoningBottle : MonoBehaviour
         spout != null ? spout.position : transform.position + transform.up * 0.12f;
 
     // น้ำมันลงกระทะเท่านั้น · ซอสอื่นลงถ้วยถ้าปากขวดอยู่เหนือถ้วย
-    private bool IsAboveBowl =>
-        bowl != null &&
-        ingredientId != ObjectiveManager.CookingOilIngredientId &&
-        bowl.IsAbove(SpoutPosition);
+    // เมนูกำหนดว่าเครื่องปรุงไหนเทลงถ้วยผสม (กะเพรา: ซอส 3 อย่าง · ต้มยำ: ไม่มี เทลงหม้อตรง)
+    private bool UsesBowl =>
+        bowl != null && bowl.isActiveAndEnabled && pan != null && pan.Menu.UsesBowl(ingredientId);
+
+    private bool IsAboveBowl => UsesBowl && bowl.IsAbove(SpoutPosition);
 
     public void Configure(
         string id,
@@ -106,9 +107,7 @@ public class SeasoningBottle : MonoBehaviour
     {
         if (grabFeedback != null)
         {
-            string target = bowl != null && ingredientId != ObjectiveManager.CookingOilIngredientId
-                ? "ถ้วยผสมซอสบนโต๊ะเตรียม"
-                : "กระทะ";
+            string target = UsesBowl ? "ถ้วยผสมซอสบนโต๊ะเตรียม" : (pan != null ? pan.Menu.VesselThai : "กระทะ");
             grabFeedback.ShowStationMessage(
                 $"ถือ{displayNameThai}แล้ว เอียงหรือกดไกเหนือ{target}เพื่อเท",
                 true);
@@ -188,9 +187,9 @@ public class SeasoningBottle : MonoBehaviour
         {
             if (fromButton)
             {
-                pan.ShowHint(bowl != null && ingredientId != ObjectiveManager.CookingOilIngredientId
+                pan.ShowHint(UsesBowl
                     ? $"ถือขวด{displayNameThai}ให้อยู่เหนือถ้วยผสมซอสก่อนเท"
-                    : $"ถือขวด{displayNameThai}ให้อยู่เหนือกระทะก่อนเท");
+                    : $"ถือขวด{displayNameThai}ให้อยู่เหนือ{pan.Menu.VesselThai}ก่อนเท");
             }
 
             return false;

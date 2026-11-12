@@ -237,7 +237,7 @@ public static class M1PanSetupEditor
     }
 
     // slotAbove: จุดเหนือที่วาง ยิง Ray ลงหาพื้นผิว (เคาน์เตอร์) แล้ววางก้นขวดบนพื้นผิวนั้น
-    private static void BuildBottle(
+    internal static void BuildBottle(
         Transform root, string id, string nameThai, Vector3 slotAbove, Color color,
         PanContents pan, Material template)
     {
@@ -549,7 +549,7 @@ public static class M1PanSetupEditor
     }
 
     // ชิ้นส่วนสำหรับมองเห็นอย่างเดียว (ไม่มี Collider) ใช้ Collider รวมที่ตัวแม่
-    private static GameObject Visual(
+    internal static GameObject Visual(
         Transform parent, string name, PrimitiveType shape, Vector3 localPosition, Vector3 localScale, Material material)
     {
         GameObject part = GameObject.CreatePrimitive(shape);
@@ -563,7 +563,7 @@ public static class M1PanSetupEditor
         return part;
     }
 
-    private static void CreateLabel(Transform parent, GameObject prefab, string name, Vector3 worldPosition, string message)
+    internal static void CreateLabel(Transform parent, GameObject prefab, string name, Vector3 worldPosition, string message)
     {
         var label = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
         Undo.RegisterCreatedObjectUndo(label, "สร้างป้ายชั้นเครื่องปรุง");
@@ -579,7 +579,7 @@ public static class M1PanSetupEditor
         data.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    private static Material GetOrCreateMaterial(string name, Color color, Material source)
+    internal static Material GetOrCreateMaterial(string name, Color color, Material source)
     {
         string path = $"{StationFolder}/{name}.mat";
         Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);

@@ -6,6 +6,8 @@ using UnityEngine.XR.Interaction.Toolkit.Inputs;
 
 public class MissionChecklistUI : MonoBehaviour
 {
+    private string MenuName => objectiveManager != null ? objectiveManager.Menu.nameThai : "ผัดกะเพราไก่";
+
     public enum PanelMode
     {
         Wrist,  // ติดข้อมือซ้าย ขึ้นเมื่อหันหลังมือมาดู (ค่าเริ่มต้น ตั้งแต่ 2 พ.ย.)
@@ -460,8 +462,8 @@ public class MissionChecklistUI : MonoBehaviour
         if (objectiveManager == null || !objectiveManager.MissionAccepted)
         {
             checklistText.text = panelMode == PanelMode.Wrist
-                ? "ภารกิจ: ผัดกะเพรา\n\nเดินไปหาป้าแสงเพื่อรับภารกิจ\n(หันหลังมือซ้ายมาดูภารกิจได้ทุกเมื่อ)"
-                : "ภารกิจ: ผัดกะเพรา\n\n" +
+                ? $"ภารกิจ: {MenuName}\n\nเดินไปหาป้าแสงเพื่อรับภารกิจ\n(หันหลังมือซ้ายมาดูภารกิจได้ทุกเมื่อ)"
+                : $"ภารกิจ: {MenuName}\n\n" +
                   "เดินไปหาป้าแสงเพื่อรับภารกิจ";
             return;
         }
@@ -494,7 +496,7 @@ public class MissionChecklistUI : MonoBehaviour
         // ขั้นที่ผ่านแล้วสรุปบรรทัดเดียว ขั้นปัจจุบันแสดงรายการวัตถุดิบ (ป้ายไม่ยาวเกินเมื่อถึงขั้นปรุง)
         // ดึงจากตาราง Mission Steps จึงไม่ต้องแก้ UI เมื่อเพิ่มวัตถุดิบใหม่
         var builder = new System.Text.StringBuilder();
-        builder.Append("ป้าแสง: ช่วยทำผัดกะเพราให้หน่อยจ้ะ\n");
+        builder.Append($"ป้าแสง: ช่วยทำ{MenuName}ให้หน่อยจ้ะ\n");
         builder.Append("นำวัตถุดิบไปวางบนโต๊ะเตรียม\n");
 
         var steps = objectiveManager.Steps;

@@ -20,6 +20,9 @@ public class RubricResult
 {
     public string sessionId;
     public string mode;
+    public string menuId;
+    public string menuNameThai;
+    public string playerName;
     public int totalScore;
     public int maxScore;
     public string grade;           // excellent / pass / practice / fail
@@ -84,13 +87,17 @@ public static class RubricScorer
         ObjectiveManager.ChickenIngredientId, ObjectiveManager.OysterSauceIngredientId, ObjectiveManager.FishSauceIngredientId,
         ObjectiveManager.SugarIngredientId, ObjectiveManager.KrapowLeafIngredientId,
     };
-    private static readonly string[] WashIds = { ObjectiveManager.KrapowLeafIngredientId, ObjectiveManager.ChiliIngredientId };
-    private static readonly string[] CutIds = { ObjectiveManager.ChiliIngredientId, ObjectiveManager.GarlicIngredientId, ObjectiveManager.ChickenIngredientId };
-
-    public static RubricResult Score(IReadOnlyList<ActionLogEntry> log, string sessionId = "", string mode = "Training")
+    // menu ว่าง = ผัดกะเพราไก่ · รายการวัตถุดิบ/ล้าง/หั่น/จุดคน/ข้อความลำดับ อ่านจากเมนู
+    public static RubricResult Score(IReadOnlyList<ActionLogEntry> log, string sessionId = "", string mode = "Training",
+                                     MenuDefinition menu = null)
     {
         log ??= Array.Empty<ActionLogEntry>();
-        var result = new RubricResult { sessionId = sessionId, mode = mode };
+        menu ??= MenuCatalog.KrapowChicken();
+        string[] dishIngredients = menu.DishIngredientIds;
+        string mainId = menu.mainIngredientId;
+        string mainThai = Thai(menu, mainId);
+        var result = new RubricResult { sessionId = sessionId, mode = mode, menuId = menu.menuId, menuNameThai = menu.nameThai,
+                                      playerName = ActionLog.PlayerName };
         bool challenge = string.Equals(mode, "Challenge", StringComparison.OrdinalIgnoreCase);
 
         ActionLogEntry served = log.LastOrDefault(e => e.action == ActionLog.Actions.DishServed);
@@ -98,16 +105,16 @@ public static class RubricScorer
         ActionLogEntry dish = served ?? plated;
         Dictionary<string, string> dishValues = ParseValues(dish?.value);
         var missing = new HashSet<string>(
-            dish == null ? DishIngredients : Split(dishValues.TryGetValue("missing", out string m) ? m : ""));
+            dish == null ? dishIngredients : Split(dishValues.TryGetValue("missing", out string m) ? m : ""));
         string chickenState = dishValues.TryGetValue("chicken", out string cs) ? cs : IngredientState.Raw.ToString();
         int heatAtPlate = dishValues.TryGetValue("heat", out string hs) && int.TryParse(hs, out int h) ? h : 0;
         result.elapsedSeconds = served != null ? served.elapsedSeconds : (log.Count > 0 ? log[log.Count - 1].elapsedSeconds : 0f);
 
         // 1) วัตถุดิบถูกชนิดและครบจำนวน (20)
         var c1 = Category(result, Ingredients, "วัตถุดิบถูกชนิดและครบ", 20);
-        foreach (string id in DishIngredients.Where(missing.Contains))
+        foreach (string id in dishIngredients.Where(missing.Contains))
         {
-            Deduct(c1, MissingIngredientPenalty, $"ในจานขาด{DishSummaryThai(id)}");
+            Deduct(c1, MissingIngredientPenalty, $"ในจานขาด{Thai(menu, id)}");
         }
         int wrongPicks = log.Count(e => e.action == ActionLog.Actions.IngredientCollected && !e.isCorrect &&
                                         e.value == IngredientCollectionResult.WrongIngredient.ToString());
@@ -115,18 +122,21 @@ public static class RubricScorer
 
         // 2) การล้างและเตรียม (15)
         var c2 = Category(result, Preparation, "การล้างและเตรียม", 15);
-        foreach (string id in WashIds)
+        foreach (string id in menu.WashIds)
         {
             if (!log.Any(e => e.action == ActionLog.Actions.IngredientWashed && e.isCorrect && e.ingredientId == id))
-                Deduct(c2, NotWashedPenalty, $"ยังไม่ได้ล้าง{DishSummaryThai(id)}");
+                Deduct(c2, NotWashedPenalty, $"ยังไม่ได้ล้าง{Thai(menu, id)}");
         }
-        foreach (string id in CutIds)
+        foreach (string id in menu.CutIds)
         {
             if (!log.Any(e => e.action == ActionLog.Actions.IngredientCut && e.isCorrect && e.ingredientId == id))
-                Deduct(c2, NotCutPenalty, $"ยังไม่ได้หั่น{DishSummaryThai(id)}");
+                Deduct(c2, NotCutPenalty, $"ยังไม่ได้หั่น{Thai(menu, id)}");
         }
-        if (log.Any(e => e.action == ActionLog.Actions.IngredientWashed && e.ingredientId == ObjectiveManager.ChickenIngredientId))
-            Deduct(c2, WashedChickenPenalty, "ไม่ควรล้างไก่ดิบใต้ก๊อก (น้ำกระเด็นพาเชื้อโรค)");
+        foreach (string id in menu.noWashIds ?? Array.Empty<string>())
+        {
+            if (log.Any(e => e.action == ActionLog.Actions.IngredientWashed && e.ingredientId == id))
+                Deduct(c2, WashedChickenPenalty, $"ไม่ควรล้าง{Thai(menu, id)}ดิบใต้ก๊อก (น้ำกระเด็นพาเชื้อโรค)");
+        }
         int prepRejects = log.Count(e => e.action == ActionLog.Actions.IngredientAddedToPan && !e.isCorrect &&
                                          !IsOrderMistake(e) && !IsDuplicate(e));
         if (prepRejects > 0) Deduct(c2, Mathf.Min(prepRejects * PrepRejectPenalty, PrepRejectMax), $"ใส่ของที่ยังไม่เตรียมลงกระทะ {prepRejects} ครั้ง");
@@ -135,27 +145,32 @@ public static class RubricScorer
         var c3 = Category(result, Order, "ลำดับการปรุง", 25);
         foreach (ActionLogEntry e in log.Where(IsOrderMistake))
         {
-            Deduct(c3, OrderMistakePenalty, OrderMistakeThai(ParseValues(e.value).TryGetValue("order", out string code) ? code : ""));
+            string code = ParseValues(e.value).TryGetValue("order", out string oc) ? oc : "";
+            OrderRule rule = menu.RuleFor(code);
+            Deduct(c3, OrderMistakePenalty, rule != null && !string.IsNullOrEmpty(rule.rubricThai) ? rule.rubricThai : OrderMistakeThai(code));
         }
-        if (dish != null && missing.Contains(ObjectiveManager.StirAromaticsId)) Deduct(c3, MissingStirPenalty, "ไม่ได้คนเครื่องหอมก่อนใส่ไก่");
-        if (dish != null && missing.Contains(ObjectiveManager.StirFinalId)) Deduct(c3, MissingStirPenalty, "ไม่ได้คนให้เข้ากันหลังใส่กะเพรา");
+        foreach (StirCheckpoint stir in menu.stirCheckpoints)
+        {
+            if (dish != null && missing.Contains(stir.stirId))
+                Deduct(c3, MissingStirPenalty, string.IsNullOrEmpty(stir.missingRubricThai) ? "ไม่ได้คนตามจังหวะ" : stir.missingRubricThai);
+        }
 
         // 4) ความสุกและการใช้ไฟ (20) · ไก่ดิบ/ไหม้ = ไม่ผ่าน
         var c4 = Category(result, Cooking, "ความสุกและการใช้ไฟ", 20);
         if (chickenState == IngredientState.Burned.ToString())
         {
-            Deduct(c4, c4.maxScore, "ไก่ไหม้ ลดไฟลงหรือตักออกเร็วขึ้น");
-            result.forcedFailReason = "ไก่ไหม้ (เงื่อนไขบังคับ ไม่ผ่าน)";
+            Deduct(c4, c4.maxScore, $"{mainThai}ไหม้ ลดไฟลงหรือตักออกเร็วขึ้น");
+            result.forcedFailReason = $"{mainThai}ไหม้ (เงื่อนไขบังคับ ไม่ผ่าน)";
         }
         else if (chickenState != IngredientState.Cooked.ToString() && chickenState != IngredientState.Served.ToString())
         {
-            Deduct(c4, c4.maxScore, "ไก่ยังไม่สุก ผัดต่ออีกสักพักก่อนตัก");
-            result.forcedFailReason = "ไก่ยังไม่สุก (เงื่อนไขบังคับ ไม่ผ่าน)";
+            Deduct(c4, c4.maxScore, $"{mainThai}ยังไม่สุก ปรุงต่ออีกสักพักก่อนตัก");
+            result.forcedFailReason = $"{mainThai}ยังไม่สุก (เงื่อนไขบังคับ ไม่ผ่าน)";
         }
         if (heatAtPlate > 0) Deduct(c4, HeatOnPenalty, "ปิดเตาก่อนตักใส่จาน");
         if (log.Any(e => e.action == ActionLog.Actions.FoodStateChanged && e.stateAfter == IngredientState.Burned.ToString() &&
-                         e.ingredientId != ObjectiveManager.ChickenIngredientId))
-            Deduct(c4, OtherBurnedPenalty, "มีวัตถุดิบไหม้ในกระทะ");
+                         e.ingredientId != mainId))
+            Deduct(c4, OtherBurnedPenalty, menu.vessel == CookVessel.Pot ? "มีวัตถุดิบไหม้ในหม้อ" : "มีวัตถุดิบไหม้ในกระทะ");
 
         // 5) การเสิร์ฟและจบภารกิจ (10)
         var c5 = Category(result, Serving, "การเสิร์ฟและจบภารกิจ", 10);
@@ -228,6 +243,10 @@ public static class RubricScorer
 
     private static IEnumerable<string> Split(string csv) =>
         string.IsNullOrEmpty(csv) ? Array.Empty<string>() : csv.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0);
+
+    // ชื่อไทยจากเมนูก่อน แล้วค่อยใช้ตารางเดิม
+    private static string Thai(MenuDefinition menu, string id) =>
+        (menu != null ? menu.DisplayName(id) : null) ?? DishSummaryThai(id);
 
     public static string DishSummaryThai(string id) => id switch
     {

@@ -63,6 +63,7 @@ public class DishPlate : MonoBehaviour, IMissionResettable
         Summary = summary;
         ShowFood(true);
         TintChicken(summary);
+        TintSoup(summary);
 
         if (feedback != null)
         {
@@ -112,6 +113,42 @@ public class DishPlate : MonoBehaviour, IMissionResettable
         block.SetColor(ColorId, color);
         chickenRenderer.SetPropertyBlock(block);
     }
+
+    // เมนูหม้อ (ต้มยำ): ย้อมอาหารบนจานทั้งกองเป็นสีน้ำแกงส้ม · เมนูกระทะ: คืนสีเดิม
+    private void TintSoup(DishSummary summary)
+    {
+        if (foodVisual == null)
+        {
+            return;
+        }
+
+        bool soup = summary != null && summary.Menu != null && summary.Menu.vessel == CookVessel.Pot;
+        foreach (Renderer r in foodVisual.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r == chickenRenderer && !soup)
+            {
+                continue;
+            }
+
+            if (!soup)
+            {
+                r.SetPropertyBlock(null);
+                continue;
+            }
+
+            var soupBlock = new MaterialPropertyBlock();
+            Color color = r == chickenRenderer ? TintFor(summary) : new Color(0.93f, 0.48f, 0.18f);
+            soupBlock.SetColor(BaseColorId, color);
+            soupBlock.SetColor(ColorId, color);
+            r.SetPropertyBlock(soupBlock);
+        }
+    }
+
+    // กุ้งสุก = ส้มอ่อน · ดิบ = เทาใส · สุกเกิน = ส้มเข้ม
+    private static Color TintFor(DishSummary summary) =>
+        summary.ChickenBurned ? new Color(0.75f, 0.30f, 0.15f)
+        : summary.ChickenCooked ? new Color(1f, 0.62f, 0.45f)
+        : new Color(0.75f, 0.75f, 0.78f);
 
     public void ResetForMission()
     {

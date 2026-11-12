@@ -13,6 +13,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 public class ResultBoardUI : MonoBehaviour, IMissionResettable
 {
     [SerializeField] private SessionManager sessionManager;
+    [SerializeField] private ObjectiveManager objectiveManager;
     [SerializeField, Min(0f)] private float showDelay = 2.5f;
     [SerializeField, Min(0.3f)] private float distance = 1.1f;
     [SerializeField] private float heightOffset = -0.15f;   // ต่ำกว่าระดับตาเล็กน้อย
@@ -35,6 +36,7 @@ public class ResultBoardUI : MonoBehaviour, IMissionResettable
     private void Awake()
     {
         if (sessionManager == null) sessionManager = FindAnyObjectByType<SessionManager>();
+        if (objectiveManager == null) objectiveManager = FindAnyObjectByType<ObjectiveManager>();
         Build();
         board.SetActive(false);
     }
@@ -56,7 +58,8 @@ public class ResultBoardUI : MonoBehaviour, IMissionResettable
     {
         yield return new WaitForSeconds(showDelay);
         pending = null;
-        ShowResult(RubricScorer.Score(ActionLog.Entries, ActionLog.SessionId, ActionLog.Mode));
+        ShowResult(RubricScorer.Score(ActionLog.Entries, ActionLog.SessionId, ActionLog.Mode,
+            objectiveManager != null ? objectiveManager.Menu : null));
     }
 
     public void ShowResult(RubricResult result)
@@ -64,7 +67,7 @@ public class ResultBoardUI : MonoBehaviour, IMissionResettable
         LastResult = result;
         Debug.Log($"[ผลการประเมิน] {result.totalScore}/{result.maxScore} {result.gradeThai}\n{result.ToJson()}", this);
 
-        title.text = "ป้าแสงประเมินผัดกะเพราไก่";
+        title.text = "ป้าแสงประเมิน" + (string.IsNullOrEmpty(result.menuNameThai) ? "ผัดกะเพราไก่" : result.menuNameThai);
         score.text = $"{result.totalScore}<size=40>/{result.maxScore}</size>";
         grade.text = result.gradeThai;
         grade.color = result.passed ? new Color(0.55f, 0.9f, 0.45f) : new Color(1f, 0.55f, 0.4f);
@@ -97,6 +100,10 @@ public class ResultBoardUI : MonoBehaviour, IMissionResettable
         sessionManager.StartNewSession();
         CollectionFeedbackUI feedback = FindAnyObjectByType<CollectionFeedbackUI>();
         if (feedback != null) feedback.ShowStationMessage("เริ่มรอบใหม่แล้ว กลับไปรับภารกิจจากป้าแสงนะจ๊ะ", true);
+
+        // มีกระดานเริ่ม: ให้เลือกเมนูใหม่ (ชื่อเดิม ไม่ต้องพิมพ์ซ้ำ)
+        StartBoardUI start = FindAnyObjectByType<StartBoardUI>();
+        if (start != null && !string.IsNullOrEmpty(ActionLog.PlayerName)) start.Open(true);
     }
 
     public void ResetForMission() => Hide();

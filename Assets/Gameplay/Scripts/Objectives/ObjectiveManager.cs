@@ -53,6 +53,10 @@ public class ObjectiveManager : MonoBehaviour
     [SerializeField] private string currentStepId = AcceptMissionStepId;
     [SerializeField] private bool missionAccepted;
 
+    [Header("Menu")]
+    [Tooltip("เมนูที่เล่นรอบนี้ (ว่าง = ผัดกะเพราไก่)")]
+    [SerializeField] private MenuDefinition menu;
+
     [Header("Mission Steps")]
     [Tooltip("ลำดับขั้นภารกิจ เรียงจากขั้นแรกถึงขั้นสุดท้าย")]
     [SerializeField] private List<MissionStepDefinition> steps =
@@ -64,6 +68,20 @@ public class ObjectiveManager : MonoBehaviour
     private readonly HashSet<string> collectedInstanceIds = new();
 
     public event Action ObjectiveChanged;
+
+    public MenuDefinition Menu => menu != null ? menu : MenuCatalog.KrapowChicken();
+
+    // เปลี่ยนเมนู (เช่นจากกระดานเลือกเมนู) แล้วเริ่มตารางขั้นใหม่
+    public void SetMenu(MenuDefinition newMenu)
+    {
+        menu = newMenu;
+        steps = Menu.CloneSteps();
+        ClearProgress();
+        Debug.Log($"[เป้าหมาย] เลือกเมนู {Menu.nameThai}", this);
+        NotifyObjectiveChanged();
+    }
+
+    private bool IsCookStepNow(string stepId) => Menu.IsCookStep(stepId);
 
     public string CurrentStepId => currentStepId;
     public bool MissionAccepted => missionAccepted;
@@ -84,7 +102,11 @@ public class ObjectiveManager : MonoBehaviour
 
     private void Awake()
     {
-        if (steps == null || steps.Count == 0)
+        if (menu != null)
+        {
+            steps = menu.CloneSteps();
+        }
+        else if (steps == null || steps.Count == 0)
         {
             Debug.LogWarning(
                 "[เป้าหมาย] ตารางขั้นภารกิจว่าง จึงใช้ค่าเริ่มต้นผัดกะเพราไก่",
@@ -562,7 +584,7 @@ public class ObjectiveManager : MonoBehaviour
     // ใส่ของลงกระทะ/เทเครื่องปรุง/คน ได้ตั้งแต่ถึงขั้นปรุงขั้นแรก
     public bool CanCookNow(out string reason)
     {
-        if (!missionAccepted || !IsCookingStep(currentStepId))
+        if (!missionAccepted || !IsCookStepNow(currentStepId))
         {
             reason = "ยังไม่ถึงขั้นปรุง เตรียมวัตถุดิบให้ครบก่อน";
             return false;
@@ -577,7 +599,7 @@ public class ObjectiveManager : MonoBehaviour
     // ไม่บันทึก ActionLog ที่นี่ ผู้เรียก (PanContents) บันทึกเหตุการณ์เอง
     public bool RecordCookingProgress(string ingredientId, IngredientState state)
     {
-        if (!missionAccepted || !IsCookingStep(currentStepId) || steps == null)
+        if (!missionAccepted || !IsCookStepNow(currentStepId) || steps == null)
         {
             return false;
         }
@@ -588,7 +610,7 @@ public class ObjectiveManager : MonoBehaviour
         {
             MissionStepDefinition step = steps[i];
 
-            if (!IsCookingStep(step.stepId))
+            if (!IsCookStepNow(step.stepId))
             {
                 break;
             }
@@ -679,8 +701,12 @@ public class ObjectiveManager : MonoBehaviour
             return false;
         }
 
-        if (ingredient.CurrentState != IngredientState.Washed &&
-            ingredient.CurrentState != IngredientState.Cut)
+        bool needsPrep = Menu.PrepStateFor(ingredient.IngredientId) != IngredientState.Collected;
+        bool prepared = ingredient.CurrentState == IngredientState.Washed ||
+                        ingredient.CurrentState == IngredientState.Cut ||
+                        (!needsPrep && ingredient.CurrentState == IngredientState.Collected);
+
+        if (!prepared)
         {
             reason = "วัตถุดิบนี้ยังไม่ได้ล้างหรือหั่น";
             return false;
@@ -920,7 +946,7 @@ public class ObjectiveManager : MonoBehaviour
     [ContextMenu("Test/Restore Default Steps")]
     public void ApplyDefaultSteps()
     {
-        steps = CreateDefaultSteps();
+        steps = Menu.CloneSteps();
         ClearProgress();
         Debug.Log("[เป้าหมาย] ใช้ตารางขั้นภารกิจค่าเริ่มต้นแล้ว", this);
     }

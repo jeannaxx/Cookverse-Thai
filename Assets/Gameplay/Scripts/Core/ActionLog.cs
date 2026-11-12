@@ -44,6 +44,8 @@ public static class ActionLog
         public const string DishServed = "DishServed";
         public const string MissionCompleted = "MissionCompleted";
         public const string MissionReset = "MissionReset";
+        public const string PlayerNamed = "PlayerNamed";     // ใส่ชื่อผู้เล่นที่กระดานเริ่ม (value = ชื่อ)
+        public const string MenuSelected = "MenuSelected";   // เลือกเมนู (value = menuId)
     }
 
     [Serializable]
@@ -51,6 +53,8 @@ public static class ActionLog
     {
         public string sessionId;
         public string mode;
+        public string playerName;
+        public string menuId;
         public List<ActionLogEntry> entries;
     }
 
@@ -59,6 +63,9 @@ public static class ActionLog
 
     public static string SessionId { get; private set; } = string.Empty;
     public static string Mode { get; private set; } = string.Empty;
+    // ชื่อผู้เล่น/เมนู คงอยู่ข้ามรอบ (เล่นใหม่ไม่ต้องใส่ชื่อซ้ำ) · ใช้กับกระดานอันดับภายหลัง
+    public static string PlayerName { get; set; } = string.Empty;
+    public static string MenuId { get; set; } = string.Empty;
     public static bool LogToConsole { get; set; } = true;
     public static IReadOnlyList<ActionLogEntry> Entries => entries;
 
@@ -72,6 +79,8 @@ public static class ActionLog
         sessionStartTime = 0f;
         SessionId = string.Empty;
         Mode = string.Empty;
+        PlayerName = string.Empty;
+        MenuId = string.Empty;
         LogToConsole = true;
         EntryAdded = null;
     }
@@ -153,6 +162,8 @@ public static class ActionLog
         {
             sessionId = SessionId,
             mode = Mode,
+            playerName = PlayerName,
+            menuId = MenuId,
             entries = new List<ActionLogEntry>(entries)
         };
 

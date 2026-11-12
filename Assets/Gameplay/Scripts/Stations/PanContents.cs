@@ -37,6 +37,12 @@ public class PanContents : MonoBehaviour, IMissionResettable
     private readonly Dictionary<IngredientIdentity, float> heat = new();
     private readonly CookingOrder order = new();
     private Collider zoneCollider;
+    private float boilHeat;
+
+    public MenuDefinition Menu { get { SyncMenu(); return order.Menu; } }
+    public bool Boiling => order.Boiling;
+    public bool HasWater => !string.IsNullOrEmpty(order.Menu.boilIngredientId) && order.Has(order.Menu.boilIngredientId);
+    public float BoilProgress => order.Menu.boilAtHeat > 0f ? Mathf.Clamp01(boilHeat / order.Menu.boilAtHeat) : 0f;
 
     public IReadOnlyCollection<IngredientIdentity> Contents => inPan;
     public CookingOrder Order => order;
@@ -153,10 +159,12 @@ public class PanContents : MonoBehaviour, IMissionResettable
             return;
         }
 
+        UpdateBoil(rate);
+
         // ร้อนเฉพาะของที่ยังอยู่ในกระทะ ยกออกแล้วหยุดสุก
         foreach (IngredientIdentity ingredient in inside)
         {
-            if (!inPan.Contains(ingredient) || ingredient.IngredientId != trackedIngredientId)
+            if (!inPan.Contains(ingredient) || ingredient.IngredientId != MainIngredientId)
             {
                 continue;
             }
@@ -184,6 +192,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
             return;
         }
 
+        SyncMenu();
         string mistake = order.Evaluate(ingredient.IngredientId);
         order.MarkAdded(ingredient.IngredientId);
 
@@ -223,6 +232,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
             return false;
         }
 
+        SyncMenu();
         string mistake = order.Evaluate(ingredientId);
         order.MarkAdded(ingredientId);
 
@@ -247,26 +257,21 @@ public class PanContents : MonoBehaviour, IMissionResettable
 
         if (!HasAnything)
         {
-            Show("ยังไม่มีอะไรในกระทะให้คน", false);
+            Show($"ยังไม่มีอะไรใน{order.Menu.VesselThai}ให้คน", false);
             return;
         }
 
         StirCount++;
         string stirValue;
 
-        if (!order.AromaticsStirred && order.AromaticsInPan)
+        SyncMenu();
+        StirCheckpoint next = order.NextStir();
+        if (next != null)
         {
-            order.AromaticsStirred = true;
-            stirValue = "aromatics";
-            objectiveManager.RecordCookingProgress(ObjectiveManager.StirAromaticsId, IngredientState.Cooking);
-            Show("คนเครื่องหอมแล้ว ใส่ไก่ได้เลย", true);
-        }
-        else if (!order.FinalStirred && order.Has(ObjectiveManager.KrapowLeafIngredientId))
-        {
-            order.FinalStirred = true;
-            stirValue = "final";
-            objectiveManager.RecordCookingProgress(ObjectiveManager.StirFinalId, IngredientState.Cooking);
-            Show("คนให้เข้ากันแล้ว ปิดเตาได้เลย", true);
+            order.MarkStir(next.stirId);
+            stirValue = string.IsNullOrEmpty(next.logValue) ? next.stirId : next.logValue;
+            objectiveManager.RecordCookingProgress(next.stirId, IngredientState.Cooking);
+            Show(string.IsNullOrEmpty(next.doneMessageThai) ? "คนแล้ว" : next.doneMessageThai, true);
         }
         else
         {
@@ -286,7 +291,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
     {
         if (objectiveManager == null || !objectiveManager.MissionAccepted || !HasAnything)
         {
-            reason = "ยังไม่มีอาหารในกระทะ";
+            reason = $"ยังไม่มีอาหารใน{order.Menu.VesselThai}";
             return false;
         }
 
@@ -296,7 +301,8 @@ public class PanContents : MonoBehaviour, IMissionResettable
             return false;
         }
 
-        bool cookingDone = objectiveManager.IsStepComplete(ObjectiveManager.CookSeasonStepId);
+        SyncMenu();
+        bool cookingDone = objectiveManager.IsStepComplete(order.Menu.FinalCookStepId);
 
         if (StoveLevel > 0 && !cookingDone)
         {
@@ -324,7 +330,8 @@ public class PanContents : MonoBehaviour, IMissionResettable
             OrderMistakes = 0
         };
 
-        foreach (string id in RequiredForDish)
+        summary.Menu = order.Menu;
+        foreach (string id in order.Menu.DishIngredientIds)
         {
             if (!order.Has(id))
             {
@@ -332,8 +339,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
             }
         }
 
-        if (!order.AromaticsStirred) summary.Missing.Add(ObjectiveManager.StirAromaticsId);
-        if (!order.FinalStirred) summary.Missing.Add(ObjectiveManager.StirFinalId);
+        foreach (StirCheckpoint stir in order.MissingStirs()) summary.Missing.Add(stir.stirId);
 
         Plated = true;
 
@@ -357,23 +363,21 @@ public class PanContents : MonoBehaviour, IMissionResettable
         return summary;
     }
 
-    private static readonly string[] RequiredForDish =
+    // เมนูปัจจุบันจาก ObjectiveManager (เปลี่ยนเมนูแล้วกฎลำดับ/จุดคน/วัตถุดิบหลักเปลี่ยนตาม)
+    private void SyncMenu()
     {
-        ObjectiveManager.CookingOilIngredientId,
-        ObjectiveManager.GarlicIngredientId,
-        ObjectiveManager.ChiliIngredientId,
-        ObjectiveManager.ChickenIngredientId,
-        ObjectiveManager.OysterSauceIngredientId,
-        ObjectiveManager.FishSauceIngredientId,
-        ObjectiveManager.SugarIngredientId,
-        ObjectiveManager.KrapowLeafIngredientId
-    };
+        if (objectiveManager != null) order.Menu = objectiveManager.Menu;
+        order.HeatLevel = StoveLevel;
+    }
+
+    private string MainIngredientId =>
+        !string.IsNullOrEmpty(order.Menu.mainIngredientId) ? order.Menu.mainIngredientId : trackedIngredientId;
 
     private IngredientState ChickenStateInPan()
     {
         foreach (IngredientIdentity ingredient in inPan)
         {
-            if (ingredient != null && ingredient.IngredientId == trackedIngredientId)
+            if (ingredient != null && ingredient.IngredientId == MainIngredientId)
             {
                 return ingredient.CurrentState;
             }
@@ -408,11 +412,45 @@ public class PanContents : MonoBehaviour, IMissionResettable
 
     // ---------- ความสุกของไก่ ----------
 
+    // เมนูต้ม: มีน้ำในหม้อ + เปิดไฟ สะสมความร้อนจนเดือด (นับในตารางภารกิจด้วย boilMarkerId)
+    private void UpdateBoil(float rate)
+    {
+        SyncMenu();
+        MenuDefinition menu = order.Menu;
+
+        if (order.Boiling || !HasWater)
+        {
+            return;
+        }
+
+        boilHeat += rate * Time.deltaTime;
+
+        if (boilHeat < menu.boilAtHeat)
+        {
+            return;
+        }
+
+        order.Boiling = true;
+        ActionLog.Record(ActionLog.Actions.FoodStateChanged, CurrentStepId, menu.boilIngredientId, "pot-water",
+            IngredientState.AddedToPan, IngredientState.Cooking, isCorrect: true, value: $"boiling;{HeatValue}");
+
+        if (objectiveManager != null && !string.IsNullOrEmpty(menu.boilMarkerId))
+        {
+            objectiveManager.RecordCookingProgress(menu.boilMarkerId, IngredientState.Cooking);
+        }
+
+        Show("น้ำเดือดแล้ว ใส่เครื่องต้มได้เลย", true);
+    }
+
     private void UpdateDoneness(IngredientIdentity ingredient, float value)
     {
         IngredientState current = ingredient.CurrentState;
+        MenuDefinition menu = order.Menu;
+        float cookedAt = menu.mainCookedAtHeat > 0f ? menu.mainCookedAtHeat : cookedAtHeat;
+        float burnedAt = menu.mainBurnedAtHeat > 0f ? menu.mainBurnedAtHeat : burnedAtHeat;
+        string burnedWord = string.IsNullOrEmpty(menu.burnedWordThai) ? "ไหม้" : menu.burnedWordThai;
 
-        if (value >= burnedAtHeat)
+        if (value >= burnedAt)
         {
             if (current == IngredientState.Burned)
             {
@@ -421,11 +459,11 @@ public class PanContents : MonoBehaviour, IMissionResettable
 
             ingredient.TrySetState(IngredientState.Burned);
             LogFoodState(ingredient, current, IngredientState.Burned, value, false);
-            Show($"{ingredient.DisplayNameThai}ไหม้แล้ว เริ่มการปรุงใหม่อีกครั้ง", false);
+            Show($"{ingredient.DisplayNameThai}{burnedWord}แล้ว เริ่มการปรุงใหม่อีกครั้ง", false);
             return;
         }
 
-        if (value >= cookedAtHeat)
+        if (value >= cookedAt)
         {
             if (current == IngredientState.Cooked || current == IngredientState.Burned)
             {
@@ -439,7 +477,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
             {
                 objectiveManager.RecordCookingProgress(ingredient.IngredientId, IngredientState.Cooked);
             }
-            Show($"{ingredient.DisplayNameThai}สุกแล้ว ปรุงรสต่อได้ อย่าปล่อยไว้นานจนไหม้", true);
+            Show($"{ingredient.DisplayNameThai}สุกแล้ว ปรุงรสต่อได้ อย่าปล่อยไว้นานจน{burnedWord}", true);
             return;
         }
 
@@ -447,7 +485,7 @@ public class PanContents : MonoBehaviour, IMissionResettable
         {
             ingredient.TrySetState(IngredientState.Cooking);
             LogFoodState(ingredient, current, IngredientState.Cooking, value, true);
-            Show($"กำลังผัด{ingredient.DisplayNameThai}...", true);
+            Show($"{(menu.vessel == CookVessel.Pot ? "กำลังต้ม" : "กำลังผัด")}{ingredient.DisplayNameThai}...", true);
         }
     }
 
@@ -475,11 +513,11 @@ public class PanContents : MonoBehaviour, IMissionResettable
     {
         if (mistake == null)
         {
-            Show($"ใส่{displayNameThai}ลงกระทะ", true);
+            Show($"ใส่{displayNameThai}ลง{order.Menu.VesselThai}", true);
         }
         else
         {
-            Show($"ใส่{displayNameThai}แล้ว แต่ลำดับยังไม่ถูก: {CookingOrder.DescribeThai(mistake)}", false);
+            Show($"ใส่{displayNameThai}แล้ว แต่ลำดับยังไม่ถูก: {order.Describe(mistake)}", false);
         }
     }
 
@@ -521,5 +559,6 @@ public class PanContents : MonoBehaviour, IMissionResettable
         order.Clear();
         StirCount = 0;
         Plated = false;
+        boilHeat = 0f;
     }
 }
