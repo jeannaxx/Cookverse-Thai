@@ -31767,6 +31767,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2121268253684832045, guid: 7631239fb78704426a7e7e34a96419b5, type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6588125682242209496, guid: 7631239fb78704426a7e7e34a96419b5, type: 3}
       propertyPath: initialMessage
       value: "\u0E42\u0E15\u0E4A\u0E30\u0E08\u0E31\u0E14\u0E08\u0E32\u0E19: \u0E1B\u0E34\u0E14\u0E40\u0E15\u0E32
@@ -51286,6 +51290,64 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 732267084}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &732470891
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 732470892}
+  - component: {fileID: 732470893}
+  m_Layer: 0
+  m_Name: ControllerHands
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &732470892
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732470891}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1974661214}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &732470893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732470891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 577c6a4db108d4555a6ec324e28f128f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::M1ControllerHands
+  leftHandPrefab: {fileID: 8712615458885587302, guid: a3193ba7e3eb74938afb46f8d2c6dc5c, type: 3}
+  rightHandPrefab: {fileID: 8451978839652649562, guid: 7f628523fbae14e20a4d82b5a0218a60, type: 3}
+  hideControllerModel: 1
+  gripPalmPosition: {x: 0.015, y: -0.025, z: -0.05}
+  fingerPitch: -15
+  handLength: 0.18
+  extraRotation: {x: 0, y: 0, z: 0}
+  restCurl: 30
+  gripCurl: 62
+  indexRest: 12
+  indexPressed: 58
+  thumbCurl: 18
+  curlSpeed: 14
+  flipCurl: 0
 --- !u!1 &733876175
 GameObject:
   m_ObjectHideFlags: 0
@@ -140697,6 +140759,7 @@ Transform:
   - {fileID: 501807432}
   - {fileID: 87758750}
   - {fileID: 625065234}
+  - {fileID: 732470892}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1974900255
