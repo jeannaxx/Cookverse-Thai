@@ -72,6 +72,8 @@ public class MenuDefinition : ScriptableObject
     [Tooltip("รายการในตารางภารกิจที่นับเมื่อน้ำเดือด (สถานะ Cooking)")]
     public string boilMarkerId;
     public float boilAtHeat = 30f;
+    [Tooltip("สีน้ำแกงในหม้อ/บนจาน หลังปรุง (ต้มยำ = ส้ม · ต้มข่า = ขาวนวล)")]
+    public Color soupColor = new(0.93f, 0.48f, 0.18f, 1f);
     public List<MissionStepDefinition> steps = new();
     public List<OrderRule> orderRules = new();
     public List<StirCheckpoint> stirCheckpoints = new();

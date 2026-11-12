@@ -26,8 +26,13 @@ public static class M1TomYumSetupEditor
 
     private static readonly string[] KrapowOnly = { MenuCatalog.KrapowChickenId };
     private static readonly string[] TomYumOnly = { MenuCatalog.TomYumKungId };
+    private static readonly string[] TomKhaOnly = { MenuCatalog.TomKhaGaiId };
+    private static readonly string[] PotMenus = { MenuCatalog.TomYumKungId, MenuCatalog.TomKhaGaiId };
 
     [MenuItem("Tools/Cookverse Thai/M1/Setup Tom Yum (Pot + Shrimp + Bottles)")]
+    public static void SetupMenuItem() => Setup();
+
+    // ต้มยำ + ต้มข่า ใช้หม้อชุดเดียวกัน · ต้มข่าเพิ่มขวดกะทิ (วางที่ถ้วยผสมซอสของกะเพรา)
     public static void Setup()
     {
         Scene scene = SceneManager.GetActiveScene();
@@ -74,6 +79,8 @@ public static class M1TomYumSetupEditor
         if (old != null) Undo.DestroyObjectImmediate(old.gameObject);
         Transform oldLabel = gameplayUI.Find("TomYumShelfUI");
         if (oldLabel != null) Undo.DestroyObjectImmediate(oldLabel.gameObject);
+        Transform oldKhaLabel = gameplayUI.Find("TomKhaShelfUI");
+        if (oldKhaLabel != null) Undo.DestroyObjectImmediate(oldKhaLabel.gameObject);
 
         var root = new GameObject(RootName);
         Undo.RegisterCreatedObjectUndo(root, "สร้างของต้มยำ");
@@ -112,6 +119,19 @@ public static class M1TomYumSetupEditor
             labelPos = oldBottle.position;
         }
 
+        // ขวดกะทิ (ต้มข่า) วางที่ถ้วยผสมซอสของกะเพรา (ถ้วยซ่อนในเมนูหม้อ)
+        Transform bowl = panCooking != null ? panCooking.Find("Sauce_Bowl") : null;
+        if (bowl != null)
+        {
+            bool bowlActive = bowl.gameObject.activeSelf;
+            bowl.gameObject.SetActive(false);
+            Physics.SyncTransforms();
+            M1PanSetupEditor.BuildBottle(root.transform, MenuCatalog.CoconutMilkId, "กะทิ", bowl.position + Vector3.up * 0.15f,
+                new Color(0.98f, 0.97f, 0.93f), pan, template);
+            bowl.gameObject.SetActive(bowlActive);
+        }
+        else Debug.LogWarning("[ต้มยำ] ไม่พบ Sauce_Bowl จึงไม่ได้วางขวดกะทิ");
+
         Transform krapowLabel = gameplayUI.Find("SeasoningShelfUI");
         Vector3 tomYumLabelPos = krapowLabel != null ? krapowLabel.position : labelPos + Vector3.up * 0.45f;
         M1PanSetupEditor.CreateLabel(gameplayUI, feedbackPrefab, "TomYumShelfUI", tomYumLabelPos,
@@ -119,10 +139,20 @@ public static class M1TomYumSetupEditor
             "เทน้ำลงหม้อ เปิดไฟจนเดือด · ปรุงรสหลังกุ้งสุก · ปิดไฟก่อนบีบมะนาว");
         Transform tomYumLabel = gameplayUI.Find("TomYumShelfUI");
         if (krapowLabel != null) tomYumLabel.rotation = krapowLabel.rotation;
+        M1PanSetupEditor.CreateLabel(gameplayUI, feedbackPrefab, "TomKhaShelfUI", tomYumLabelPos,
+            "ต้มข่าไก่: ขวดขาวบนโต๊ะเตรียม=กะทิ · ส้ม=น้ำปลา\n" +
+            "เทกะทิลงหม้อ เปิดไฟจนเดือด · ใส่ไก่หลังสมุนไพร · ปิดไฟก่อนบีบมะนาว");
+        Transform tomKhaLabel = gameplayUI.Find("TomKhaShelfUI");
+        if (krapowLabel != null) tomKhaLabel.rotation = krapowLabel.rotation;
 
         // ---------- ของเฉพาะเมนู ----------
-        Tag(root.transform, TomYumOnly, false);
+        Tag(root.transform, PotMenus, false);
         Tag(tomYumLabel, TomYumOnly, false);
+        Tag(tomKhaLabel, TomKhaOnly, false);
+        Tag(root.transform.Find("Seasoning_" + MenuCatalog.NamPrikPaoId), TomYumOnly, false);
+        Tag(root.transform.Find("Seasoning_" + MenuCatalog.EvaporatedMilkId), TomYumOnly, false);
+        Tag(root.transform.Find("Seasoning_" + MenuCatalog.WaterId), TomYumOnly, false);
+        Tag(root.transform.Find("Seasoning_" + MenuCatalog.CoconutMilkId), TomKhaOnly, false);
         if (panCooking != null)
         {
             foreach (string n in new[] { "Seasoning_cooking_oil", "Seasoning_oyster_sauce", "Seasoning_sugar", "Sauce_Bowl" })
@@ -131,7 +161,8 @@ public static class M1TomYumSetupEditor
         Tag(krapowLabel, KrapowOnly, false);
         Tag(gameplayUI.Find("SauceBowlUI"), KrapowOnly, false);
         // ภาพ Pan_Base/Pan_Rim/Pan_Handle ซ่อนถาวรโดย Fit Stove Station (ใช้โมเดล Wok แทน)
-        Tag(FindT(scene, "Pot_OnCounter"), KrapowOnly, true);   // หม้อบนเคาน์เตอร์ย้ายมาอยู่บนเตาตอนต้มยำ
+        Tag(FindT(scene, "Pot_OnCounter"), KrapowOnly, true);
+        // ของบนเตาที่ Fit Stove สร้าง (กระทะโมเดล) คงไว้ตามเดิม   // หม้อบนเคาน์เตอร์ย้ายมาอยู่บนเตาตอนต้มยำ
 
         MenuSceneSwitcher switcher = objective.GetComponent<MenuSceneSwitcher>();
         if (switcher == null) switcher = Undo.AddComponent<MenuSceneSwitcher>(objective.gameObject);
@@ -146,6 +177,9 @@ public static class M1TomYumSetupEditor
 
     [MenuItem("Tools/Cookverse Thai/M1/Use Menu: Tom Yum Kung")]
     public static void UseTomYum() => UseMenu("Menu_TomYumKung");
+
+    [MenuItem("Tools/Cookverse Thai/M1/Use Menu: Tom Kha Gai")]
+    public static void UseTomKha() => UseMenu("Menu_TomKhaGai");
 
     [MenuItem("Tools/Cookverse Thai/M1/Use Menu: Krapow Chicken")]
     public static void UseKrapow() => UseMenu("Menu_KrapowChicken");

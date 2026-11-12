@@ -23,7 +23,7 @@ public class M1ControllerHands : MonoBehaviour
     [Tooltip("ทิศจากข้อมือไปโคนนิ้ว เทียบแนวหน้าจอย · ลบ = เงยขึ้นตามด้ามจอย (ข้อมืออยู่ล่าง-หลัง)")]
     [SerializeField] private float fingerPitch = -15f;
     [Tooltip("ความยาวมือจริง ข้อมือถึงปลายนิ้วกลาง (เมตร)")]
-    [SerializeField] private float handLength = 0.18f;
+    [SerializeField] private float handLength = 0.15f;
     [SerializeField] private Vector3 extraRotation = Vector3.zero;
 
     [Header("องศาการงอนิ้ว (ต่อข้อ)")]

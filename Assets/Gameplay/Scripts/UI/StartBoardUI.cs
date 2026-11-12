@@ -260,8 +260,11 @@ public class StartBoardUI : MonoBehaviour
 
         IReadOnlyList<MenuDefinition> list = Menus;
         int count = list.Count;
-        const float cardW = 360f, cardH = 300f, gap = 24f;
-        int cols = Mathf.Min(2, Mathf.Max(1, count));
+        // 1–2 เมนู = การ์ดใหญ่ 2 คอลัมน์ · 3 เมนูขึ้นไป = 3 คอลัมน์
+        bool compact = count > 2;
+        float cardW = compact ? 250f : 360f, cardH = compact ? 290f : 300f, gap = compact ? 18f : 24f;
+        int wrap = compact ? 17 : 26;
+        int cols = Mathf.Min(compact ? 3 : 2, Mathf.Max(1, count));
         for (int i = 0; i < count; i++)
         {
             MenuDefinition menu = list[i];
@@ -270,11 +273,11 @@ public class StartBoardUI : MonoBehaviour
             float y = -15f - row * (cardH + gap);
             RectTransform card = Button(page, "Menu_" + menu.menuId, new Vector2(x, y), new Vector2(cardW, cardH),
                 null, 0, KeyColor, KeyHover, () => SelectMenu(menu));
-            Label(card, "Name", new Vector2(0, 95), new Vector2(cardW - 30, 60), 34, TextAnchor.MiddleCenter, Color.white).text = menu.nameThai;
+            Label(card, "Name", new Vector2(0, 95), new Vector2(cardW - 30, 60), compact ? 28 : 34, TextAnchor.MiddleCenter, Color.white).text = menu.nameThai;
             Label(card, "Level", new Vector2(0, 45), new Vector2(cardW - 30, 36), 26, TextAnchor.MiddleCenter, new Color(1f, 0.8f, 0.3f))
                 .text = "ความยาก " + new string('★', menu.difficulty) + new string('☆', 3 - menu.difficulty);
             Label(card, "Desc", new Vector2(0, -50), new Vector2(cardW - 40, 150), 22, TextAnchor.UpperCenter, new Color(0.88f, 0.88f, 0.82f))
-                .text = CollectionFeedbackUI.WrapThai(menu.descriptionThai ?? "", 26);
+                .text = CollectionFeedbackUI.WrapThai(menu.descriptionThai ?? "", wrap);
             menuButtons.Add((menu, card.GetComponent<XRSimpleInteractable>()));
         }
 

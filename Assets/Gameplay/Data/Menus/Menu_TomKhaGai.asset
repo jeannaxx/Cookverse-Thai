@@ -1,0 +1,429 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b0a3f60a83d34835953e825b997ea05, type: 3}
+  m_Name: Menu_TomKhaGai
+  m_EditorClassIdentifier: Assembly-CSharp::MenuDefinition
+  menuId: tom_kha_gai
+  nameThai: "\u0E15\u0E49\u0E21\u0E02\u0E48\u0E32\u0E44\u0E01\u0E48"
+  descriptionThai: "\u0E15\u0E49\u0E21\u0E01\u0E30\u0E17\u0E34\u0E01\u0E31\u0E1A\u0E02\u0E48\u0E32
+    \u0E15\u0E30\u0E44\u0E04\u0E23\u0E49 \u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14
+    \u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48\u0E08\u0E19\u0E2A\u0E38\u0E01 \u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A
+    \u0E1B\u0E34\u0E14\u0E44\u0E1F\u0E41\u0E25\u0E49\u0E27\u0E04\u0E48\u0E2D\u0E22\u0E1A\u0E35\u0E1A\u0E21\u0E30\u0E19\u0E32\u0E27"
+  difficulty: 2
+  vessel: 1
+  mainIngredientId: chicken
+  noWashIds:
+  - chicken
+  mainCookedAtHeat: 70
+  mainBurnedAtHeat: 170
+  burnedWordThai: "\u0E2A\u0E38\u0E01\u0E40\u0E01\u0E34\u0E19\u0E08\u0E19\u0E40\u0E2B\u0E19\u0E35\u0E22\u0E27"
+  bowlSauceIds: []
+  boilIngredientId: coconut_milk
+  boilMarkerId: water_boiling
+  boilAtHeat: 30
+  soupColor: {r: 0.97, g: 0.93, b: 0.82, a: 1}
+  steps:
+  - stepId: accept_mission
+    titleThai: "\u0E04\u0E38\u0E22\u0E01\u0E31\u0E1A\u0E1B\u0E49\u0E32\u0E41\u0E2A\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E23\u0E31\u0E1A\u0E20\u0E32\u0E23\u0E01\u0E34\u0E08"
+    requirements: []
+  - stepId: collect_garden
+    titleThai: "\u0E40\u0E01\u0E47\u0E1A\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23\u0E08\u0E32\u0E01\u0E2A\u0E27\u0E19"
+    requirements:
+    - ingredientId: galangal
+      legacyName: 
+      displayNameThai: "\u0E02\u0E48\u0E32"
+      unitThai: "\u0E41\u0E07\u0E48\u0E07"
+      requiredCount: 1
+      targetState: 1
+      currentCount: 0
+    - ingredientId: lemongrass
+      legacyName: 
+      displayNameThai: "\u0E15\u0E30\u0E44\u0E04\u0E23\u0E49"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 2
+      targetState: 1
+      currentCount: 0
+    - ingredientId: kaffir_lime_leaf
+      legacyName: 
+      displayNameThai: "\u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14"
+      unitThai: "\u0E43\u0E1A"
+      requiredCount: 3
+      targetState: 1
+      currentCount: 0
+    - ingredientId: chili
+      legacyName: 
+      displayNameThai: "\u0E1E\u0E23\u0E34\u0E01"
+      unitThai: "\u0E40\u0E21\u0E47\u0E14"
+      requiredCount: 5
+      targetState: 1
+      currentCount: 0
+    - ingredientId: lime
+      legacyName: 
+      displayNameThai: "\u0E21\u0E30\u0E19\u0E32\u0E27"
+      unitThai: "\u0E25\u0E39\u0E01"
+      requiredCount: 1
+      targetState: 1
+      currentCount: 0
+    - ingredientId: coriander
+      legacyName: 
+      displayNameThai: "\u0E1C\u0E31\u0E01\u0E0A\u0E35"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 1
+      currentCount: 0
+  - stepId: collect_kitchen
+    titleThai: "\u0E2B\u0E22\u0E34\u0E1A\u0E44\u0E01\u0E48\u0E41\u0E25\u0E30\u0E40\u0E2B\u0E47\u0E14\u0E1F\u0E32\u0E07\u0E43\u0E19\u0E15\u0E39\u0E49\u0E40\u0E22\u0E47\u0E19"
+    requirements:
+    - ingredientId: chicken
+      legacyName: 
+      displayNameThai: "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E44\u0E01\u0E48"
+      unitThai: "\u0E0A\u0E34\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 1
+      currentCount: 0
+    - ingredientId: straw_mushroom
+      legacyName: 
+      displayNameThai: "\u0E40\u0E2B\u0E47\u0E14\u0E1F\u0E32\u0E07"
+      unitThai: "\u0E14\u0E2D\u0E01"
+      requiredCount: 4
+      targetState: 1
+      currentCount: 0
+  - stepId: wash_ingredients
+    titleThai: "\u0E25\u0E49\u0E32\u0E07\u0E1C\u0E31\u0E01\u0E41\u0E25\u0E30\u0E40\u0E2B\u0E47\u0E14\u0E17\u0E35\u0E48\u0E2D\u0E48\u0E32\u0E07\u0E25\u0E49\u0E32\u0E07
+      (\u0E44\u0E21\u0E48\u0E25\u0E49\u0E32\u0E07\u0E44\u0E01\u0E48\u0E14\u0E34\u0E1A)"
+    requirements:
+    - ingredientId: galangal
+      legacyName: 
+      displayNameThai: "\u0E02\u0E48\u0E32"
+      unitThai: "\u0E41\u0E07\u0E48\u0E07"
+      requiredCount: 1
+      targetState: 2
+      currentCount: 0
+    - ingredientId: lemongrass
+      legacyName: 
+      displayNameThai: "\u0E15\u0E30\u0E44\u0E04\u0E23\u0E49"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 2
+      targetState: 2
+      currentCount: 0
+    - ingredientId: kaffir_lime_leaf
+      legacyName: 
+      displayNameThai: "\u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14"
+      unitThai: "\u0E43\u0E1A"
+      requiredCount: 3
+      targetState: 2
+      currentCount: 0
+    - ingredientId: chili
+      legacyName: 
+      displayNameThai: "\u0E1E\u0E23\u0E34\u0E01"
+      unitThai: "\u0E40\u0E21\u0E47\u0E14"
+      requiredCount: 5
+      targetState: 2
+      currentCount: 0
+    - ingredientId: lime
+      legacyName: 
+      displayNameThai: "\u0E21\u0E30\u0E19\u0E32\u0E27"
+      unitThai: "\u0E25\u0E39\u0E01"
+      requiredCount: 1
+      targetState: 2
+      currentCount: 0
+    - ingredientId: coriander
+      legacyName: 
+      displayNameThai: "\u0E1C\u0E31\u0E01\u0E0A\u0E35"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 2
+      currentCount: 0
+    - ingredientId: straw_mushroom
+      legacyName: 
+      displayNameThai: "\u0E40\u0E2B\u0E47\u0E14\u0E1F\u0E32\u0E07"
+      unitThai: "\u0E14\u0E2D\u0E01"
+      requiredCount: 4
+      targetState: 2
+      currentCount: 0
+  - stepId: prepare_ingredients
+    titleThai: "\u0E2B\u0E31\u0E48\u0E19\u0E27\u0E31\u0E15\u0E16\u0E38\u0E14\u0E34\u0E1A\u0E1A\u0E19\u0E40\u0E02\u0E35\u0E22\u0E07"
+    requirements:
+    - ingredientId: chicken
+      legacyName: 
+      displayNameThai: "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E44\u0E01\u0E48"
+      unitThai: "\u0E0A\u0E34\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 3
+      currentCount: 0
+    - ingredientId: galangal
+      legacyName: 
+      displayNameThai: "\u0E02\u0E48\u0E32"
+      unitThai: "\u0E41\u0E07\u0E48\u0E07"
+      requiredCount: 1
+      targetState: 3
+      currentCount: 0
+    - ingredientId: lemongrass
+      legacyName: 
+      displayNameThai: "\u0E15\u0E30\u0E44\u0E04\u0E23\u0E49"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 2
+      targetState: 3
+      currentCount: 0
+    - ingredientId: kaffir_lime_leaf
+      legacyName: 
+      displayNameThai: "\u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14"
+      unitThai: "\u0E43\u0E1A"
+      requiredCount: 3
+      targetState: 3
+      currentCount: 0
+    - ingredientId: chili
+      legacyName: 
+      displayNameThai: "\u0E1E\u0E23\u0E34\u0E01"
+      unitThai: "\u0E40\u0E21\u0E47\u0E14"
+      requiredCount: 5
+      targetState: 3
+      currentCount: 0
+    - ingredientId: straw_mushroom
+      legacyName: 
+      displayNameThai: "\u0E40\u0E2B\u0E47\u0E14\u0E1F\u0E32\u0E07"
+      unitThai: "\u0E14\u0E2D\u0E01"
+      requiredCount: 4
+      targetState: 3
+      currentCount: 0
+    - ingredientId: lime
+      legacyName: 
+      displayNameThai: "\u0E21\u0E30\u0E19\u0E32\u0E27"
+      unitThai: "\u0E25\u0E39\u0E01"
+      requiredCount: 1
+      targetState: 3
+      currentCount: 0
+  - stepId: cook_boil
+    titleThai: "\u0E40\u0E17\u0E01\u0E30\u0E17\u0E34\u0E25\u0E07\u0E2B\u0E21\u0E49\u0E2D
+      \u0E40\u0E1B\u0E34\u0E14\u0E44\u0E1F\u0E08\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E14"
+    requirements:
+    - ingredientId: coconut_milk
+      legacyName: 
+      displayNameThai: "\u0E01\u0E30\u0E17\u0E34"
+      unitThai: "\u0E04\u0E23\u0E31\u0E49\u0E07"
+      requiredCount: 1
+      targetState: 4
+      currentCount: 0
+    - ingredientId: water_boiling
+      legacyName: 
+      displayNameThai: "\u0E23\u0E2D\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+      unitThai: "\u0E04\u0E23\u0E31\u0E49\u0E07"
+      requiredCount: 1
+      targetState: 5
+      currentCount: 0
+  - stepId: cook_herbs
+    titleThai: "\u0E43\u0E2A\u0E48\u0E02\u0E48\u0E32 \u0E15\u0E30\u0E44\u0E04\u0E23\u0E49
+      \u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14"
+    requirements:
+    - ingredientId: galangal
+      legacyName: 
+      displayNameThai: "\u0E02\u0E48\u0E32"
+      unitThai: "\u0E41\u0E07\u0E48\u0E07"
+      requiredCount: 1
+      targetState: 4
+      currentCount: 0
+    - ingredientId: lemongrass
+      legacyName: 
+      displayNameThai: "\u0E15\u0E30\u0E44\u0E04\u0E23\u0E49"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 2
+      targetState: 4
+      currentCount: 0
+    - ingredientId: kaffir_lime_leaf
+      legacyName: 
+      displayNameThai: "\u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14"
+      unitThai: "\u0E43\u0E1A"
+      requiredCount: 3
+      targetState: 4
+      currentCount: 0
+  - stepId: cook_chicken_soup
+    titleThai: "\u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48\u0E41\u0E25\u0E30\u0E40\u0E2B\u0E47\u0E14
+      \u0E15\u0E49\u0E21\u0E08\u0E19\u0E44\u0E01\u0E48\u0E2A\u0E38\u0E01"
+    requirements:
+    - ingredientId: straw_mushroom
+      legacyName: 
+      displayNameThai: "\u0E40\u0E2B\u0E47\u0E14\u0E1F\u0E32\u0E07"
+      unitThai: "\u0E14\u0E2D\u0E01"
+      requiredCount: 4
+      targetState: 4
+      currentCount: 0
+    - ingredientId: chicken
+      legacyName: 
+      displayNameThai: "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E44\u0E01\u0E48"
+      unitThai: "\u0E0A\u0E34\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 6
+      currentCount: 0
+  - stepId: cook_soup_season
+    titleThai: "\u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A \u0E1B\u0E34\u0E14\u0E44\u0E1F
+      \u0E41\u0E25\u0E49\u0E27\u0E43\u0E2A\u0E48\u0E21\u0E30\u0E19\u0E32\u0E27 \u0E1E\u0E23\u0E34\u0E01
+      \u0E1C\u0E31\u0E01\u0E0A\u0E35"
+    requirements:
+    - ingredientId: fish_sauce
+      legacyName: 
+      displayNameThai: "\u0E19\u0E49\u0E33\u0E1B\u0E25\u0E32"
+      unitThai: "\u0E04\u0E23\u0E31\u0E49\u0E07"
+      requiredCount: 1
+      targetState: 4
+      currentCount: 0
+    - ingredientId: lime
+      legacyName: 
+      displayNameThai: "\u0E21\u0E30\u0E19\u0E32\u0E27"
+      unitThai: "\u0E25\u0E39\u0E01"
+      requiredCount: 1
+      targetState: 4
+      currentCount: 0
+    - ingredientId: chili
+      legacyName: 
+      displayNameThai: "\u0E1E\u0E23\u0E34\u0E01"
+      unitThai: "\u0E40\u0E21\u0E47\u0E14"
+      requiredCount: 5
+      targetState: 4
+      currentCount: 0
+    - ingredientId: coriander
+      legacyName: 
+      displayNameThai: "\u0E1C\u0E31\u0E01\u0E0A\u0E35"
+      unitThai: "\u0E15\u0E49\u0E19"
+      requiredCount: 1
+      targetState: 4
+      currentCount: 0
+  - stepId: serve_plate
+    titleThai: "\u0E1B\u0E34\u0E14\u0E40\u0E15\u0E32 \u0E41\u0E25\u0E49\u0E27\u0E15\u0E31\u0E01\u0E43\u0E2A\u0E48\u0E0A\u0E32\u0E21\u0E17\u0E35\u0E48\u0E42\u0E15\u0E4A\u0E30\u0E08\u0E31\u0E14\u0E08\u0E32\u0E19"
+    requirements:
+    - ingredientId: dish_plated
+      legacyName: 
+      displayNameThai: "\u0E15\u0E31\u0E01\u0E15\u0E49\u0E21\u0E02\u0E48\u0E32\u0E43\u0E2A\u0E48\u0E0A\u0E32\u0E21"
+      unitThai: "\u0E0A\u0E32\u0E21"
+      requiredCount: 1
+      targetState: 8
+      currentCount: 0
+  - stepId: serve_npc
+    titleThai: "\u0E19\u0E33\u0E0A\u0E32\u0E21\u0E44\u0E1B\u0E40\u0E2A\u0E34\u0E23\u0E4C\u0E1F\u0E1B\u0E49\u0E32\u0E41\u0E2A\u0E07\u0E17\u0E35\u0E48\u0E42\u0E15\u0E4A\u0E30\u0E17\u0E32\u0E19\u0E02\u0E49\u0E32\u0E27"
+    requirements:
+    - ingredientId: dish_served
+      legacyName: 
+      displayNameThai: "\u0E40\u0E2A\u0E34\u0E23\u0E4C\u0E1F\u0E1B\u0E49\u0E32\u0E41\u0E2A\u0E07"
+      unitThai: "\u0E0A\u0E32\u0E21"
+      requiredCount: 1
+      targetState: 8
+      currentCount: 0
+  orderRules:
+  - ingredientId: galangal
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 1
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: herbs_before_boil
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+  - ingredientId: lemongrass
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 1
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: herbs_before_boil
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+  - ingredientId: kaffir_lime_leaf
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 1
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: herbs_before_boil
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+  - ingredientId: chicken
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 1
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: shrimp_before_boil
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+  - ingredientId: chicken
+    requiresAdded:
+    - galangal
+    - lemongrass
+    - kaffir_lime_leaf
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 0
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: shrimp_before_herbs
+    warnThai: "\u0E04\u0E27\u0E23\u0E15\u0E49\u0E21\u0E02\u0E48\u0E32 \u0E15\u0E30\u0E44\u0E04\u0E23\u0E49
+      \u0E43\u0E1A\u0E21\u0E30\u0E01\u0E23\u0E39\u0E14\u0E43\u0E2B\u0E49\u0E2B\u0E2D\u0E21\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E44\u0E01\u0E48\u0E01\u0E48\u0E2D\u0E19\u0E2A\u0E21\u0E38\u0E19\u0E44\u0E1E\u0E23"
+  - ingredientId: straw_mushroom
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 1
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: herbs_before_boil
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E40\u0E2B\u0E47\u0E14"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E40\u0E2B\u0E47\u0E14\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E30\u0E17\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E14"
+  - ingredientId: fish_sauce
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 1
+    requiresBoiling: 0
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: soup_season_before_shrimp_cooked
+    warnThai: "\u0E04\u0E27\u0E23\u0E23\u0E2D\u0E43\u0E2B\u0E49\u0E44\u0E01\u0E48\u0E2A\u0E38\u0E01\u0E01\u0E48\u0E2D\u0E19\u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A"
+    rubricThai: "\u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A\u0E01\u0E48\u0E2D\u0E19\u0E44\u0E01\u0E48\u0E2A\u0E38\u0E01"
+  - ingredientId: lime
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 0
+    requiresHeatOff: 1
+    forbidsAdded: []
+    mistakeCode: lime_while_boiling
+    warnThai: "\u0E1B\u0E34\u0E14\u0E44\u0E1F\u0E01\u0E48\u0E2D\u0E19\u0E1A\u0E35\u0E1A\u0E21\u0E30\u0E19\u0E32\u0E27
+      (\u0E43\u0E2A\u0E48\u0E15\u0E2D\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E14\u0E19\u0E49\u0E33\u0E41\u0E01\u0E07\u0E08\u0E30\u0E02\u0E21)"
+    rubricThai: "\u0E1A\u0E35\u0E1A\u0E21\u0E30\u0E19\u0E32\u0E27\u0E15\u0E2D\u0E19\u0E22\u0E31\u0E07\u0E40\u0E1B\u0E34\u0E14\u0E44\u0E1F
+      (\u0E19\u0E49\u0E33\u0E41\u0E01\u0E07\u0E02\u0E21)"
+  - ingredientId: chili
+    requiresAdded: []
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 0
+    requiresHeatOff: 1
+    forbidsAdded: []
+    mistakeCode: chili_while_boiling
+    warnThai: "\u0E1B\u0E34\u0E14\u0E44\u0E1F\u0E01\u0E48\u0E2D\u0E19\u0E43\u0E2A\u0E48\u0E1E\u0E23\u0E34\u0E01"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E1E\u0E23\u0E34\u0E01\u0E15\u0E2D\u0E19\u0E22\u0E31\u0E07\u0E40\u0E1B\u0E34\u0E14\u0E44\u0E1F"
+  - ingredientId: coriander
+    requiresAdded:
+    - fish_sauce
+    - lime
+    requiresStir: 
+    requiresMainCooked: 0
+    requiresBoiling: 0
+    requiresHeatOff: 0
+    forbidsAdded: []
+    mistakeCode: coriander_too_early
+    warnThai: "\u0E1C\u0E31\u0E01\u0E0A\u0E35\u0E43\u0E2A\u0E48\u0E17\u0E49\u0E32\u0E22\u0E2A\u0E38\u0E14
+      \u0E2B\u0E25\u0E31\u0E07\u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A\u0E04\u0E23\u0E1A"
+    rubricThai: "\u0E43\u0E2A\u0E48\u0E1C\u0E31\u0E01\u0E0A\u0E35\u0E01\u0E48\u0E2D\u0E19\u0E1B\u0E23\u0E38\u0E07\u0E23\u0E2A\u0E04\u0E23\u0E1A"
+  stirCheckpoints: []

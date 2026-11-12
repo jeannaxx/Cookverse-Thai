@@ -38,8 +38,10 @@ public class PotLiquidVisual : MonoBehaviour
         if (liquid.gameObject.activeSelf != hasWater) liquid.gameObject.SetActive(hasWater);
         if (!hasWater) return;
 
-        bool creamy = pan.Order.Has(MenuCatalog.EvaporatedMilkId) || pan.Order.Has(MenuCatalog.NamPrikPaoId);
-        Color color = creamy ? soupColor : Color.Lerp(waterColor, waterColor * 1.1f, pan.BoilProgress);
+        MenuDefinition menu = pan.Menu;
+        bool creamy = menu.boilIngredientId != MenuCatalog.WaterId ||   // ต้มข่า: กะทิตั้งแต่แรก
+                      pan.Order.Has(MenuCatalog.EvaporatedMilkId) || pan.Order.Has(MenuCatalog.NamPrikPaoId);
+        Color color = creamy ? menu.soupColor : Color.Lerp(waterColor, waterColor * 1.1f, pan.BoilProgress);
 
         if (liquidRenderer != null)
         {

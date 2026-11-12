@@ -8,6 +8,9 @@ public static class MenuCatalog
 {
     public const string KrapowChickenId = "krapow_chicken";
     public const string TomYumKungId = "tom_yum_kung";
+    public const string TomKhaGaiId = "tom_kha_gai";
+    public const string CoconutMilkId = "coconut_milk";
+    public const string CookChickenSoupStepId = "cook_chicken_soup";
 
     // วัตถุดิบเมนูต้ม (id ผักสวนตรงกับ VeggiePicks.json ที่อยู่ในฉากแล้ว)
     public const string LemongrassId = "lemongrass";
@@ -39,11 +42,16 @@ public static class MenuCatalog
 
     private static MenuDefinition krapow;
     private static MenuDefinition tomYum;
+    private static MenuDefinition tomKha;
 
-    public static IReadOnlyList<MenuDefinition> All() => new[] { KrapowChicken(), TomYumKung() };
+    public static IReadOnlyList<MenuDefinition> All() => new[] { KrapowChicken(), TomYumKung(), TomKhaGai() };
 
-    public static MenuDefinition Find(string menuId) =>
-        menuId == TomYumKungId ? TomYumKung() : KrapowChicken();
+    public static MenuDefinition Find(string menuId) => menuId switch
+    {
+        TomYumKungId => TomYumKung(),
+        TomKhaGaiId => TomKhaGai(),
+        _ => KrapowChicken()
+    };
 
     // ผัดกะเพราไก่ (เมนูต้นแบบ) — ขั้นภารกิจเดิมจาก ObjectiveManager.CreateDefaultSteps + กฎลำดับเดิมของ CookingOrder
     public static MenuDefinition KrapowChicken()
@@ -215,6 +223,95 @@ public static class MenuCatalog
 
         m.stirCheckpoints = new List<StirCheckpoint>();
         tomYum = m;
+        return m;
+    }
+
+    // ต้มข่าไก่ (หม้อ) · ใช้ผักสวนชุดเดียวกับต้มยำ · ไก่ (ตู้เย็น) + เห็ดฟาง · กะทิเป็นน้ำต้ม
+    // เทกะทิ ตั้งไฟจนเดือด → ข่า ตะไคร้ ใบมะกรูด → ไก่จนสุก + เห็ด → น้ำปลา → ปิดไฟ → มะนาว พริก → ผักชี
+    public static MenuDefinition TomKhaGai()
+    {
+        if (tomKha != null) return tomKha;
+
+        const State W = State.Washed, X = State.Cut, A = State.AddedToPan;
+        const string chili = ObjectiveManager.ChiliIngredientId, fish = ObjectiveManager.FishSauceIngredientId,
+            chicken = ObjectiveManager.ChickenIngredientId;
+        var m = ScriptableObject.CreateInstance<MenuDefinition>();
+        m.name = "Menu_TomKhaGai";
+        m.menuId = TomKhaGaiId;
+        m.nameThai = "ต้มข่าไก่";
+        m.descriptionThai = "ต้มกะทิกับข่า ตะไคร้ ใบมะกรูด ใส่ไก่จนสุก ปรุงรส ปิดไฟแล้วค่อยบีบมะนาว";
+        m.difficulty = 2;
+        m.vessel = CookVessel.Pot;
+        m.mainIngredientId = chicken;
+        m.mainCookedAtHeat = 70f;     // ไก่ในน้ำเดือด ไฟกลาง ~28 วิ
+        m.mainBurnedAtHeat = 170f;
+        m.burnedWordThai = "สุกเกินจนเหนียว";
+        m.noWashIds = new[] { chicken };
+        m.bowlSauceIds = new string[0];
+        m.boilIngredientId = CoconutMilkId;
+        m.boilMarkerId = WaterBoilingId;
+        m.boilAtHeat = 30f;
+        m.soupColor = new Color(0.97f, 0.93f, 0.82f, 1f);
+
+        m.steps = new List<MissionStepDefinition>
+        {
+            new(ObjectiveManager.AcceptMissionStepId, "คุยกับป้าแสงเพื่อรับภารกิจ"),
+            new(ObjectiveManager.CollectGardenStepId, "เก็บสมุนไพรจากสวน",
+                Req(GalangalId, "ข่า", "แง่ง", 1), Req(LemongrassId, "ตะไคร้", "ต้น", 2),
+                Req(KaffirLeafId, "ใบมะกรูด", "ใบ", 3), Req(chili, "พริก", "เม็ด", 5),
+                Req(LimeId, "มะนาว", "ลูก", 1), Req(CorianderId, "ผักชี", "ต้น", 1)),
+            new(ObjectiveManager.CollectKitchenStepId, "หยิบไก่และเห็ดฟางในตู้เย็น",
+                Req(chicken, "เนื้อไก่", "ชิ้น", 1), Req(StrawMushroomId, "เห็ดฟาง", "ดอก", 4)),
+            new(ObjectiveManager.WashStepId, "ล้างผักและเห็ดที่อ่างล้าง (ไม่ล้างไก่ดิบ)",
+                Req(GalangalId, "ข่า", "แง่ง", 1, W), Req(LemongrassId, "ตะไคร้", "ต้น", 2, W),
+                Req(KaffirLeafId, "ใบมะกรูด", "ใบ", 3, W), Req(chili, "พริก", "เม็ด", 5, W),
+                Req(LimeId, "มะนาว", "ลูก", 1, W), Req(CorianderId, "ผักชี", "ต้น", 1, W),
+                Req(StrawMushroomId, "เห็ดฟาง", "ดอก", 4, W)),
+            new(ObjectiveManager.PrepareStepId, "หั่นวัตถุดิบบนเขียง",
+                Req(chicken, "เนื้อไก่", "ชิ้น", 1, X), Req(GalangalId, "ข่า", "แง่ง", 1, X),
+                Req(LemongrassId, "ตะไคร้", "ต้น", 2, X), Req(KaffirLeafId, "ใบมะกรูด", "ใบ", 3, X),
+                Req(chili, "พริก", "เม็ด", 5, X), Req(StrawMushroomId, "เห็ดฟาง", "ดอก", 4, X),
+                Req(LimeId, "มะนาว", "ลูก", 1, X)),
+            new(CookBoilStepId, "เทกะทิลงหม้อ เปิดไฟจนเดือด",
+                Req(CoconutMilkId, "กะทิ", "ครั้ง", 1, A), Req(WaterBoilingId, "รอกะทิเดือด", "ครั้ง", 1, State.Cooking)),
+            new(CookHerbsStepId, "ใส่ข่า ตะไคร้ ใบมะกรูด",
+                Req(GalangalId, "ข่า", "แง่ง", 1, A), Req(LemongrassId, "ตะไคร้", "ต้น", 2, A),
+                Req(KaffirLeafId, "ใบมะกรูด", "ใบ", 3, A)),
+            new(CookChickenSoupStepId, "ใส่ไก่และเห็ด ต้มจนไก่สุก",
+                Req(StrawMushroomId, "เห็ดฟาง", "ดอก", 4, A), Req(chicken, "เนื้อไก่", "ชิ้น", 1, State.Cooked)),
+            new(CookSoupSeasonStepId, "ปรุงรส ปิดไฟ แล้วใส่มะนาว พริก ผักชี",
+                Req(fish, "น้ำปลา", "ครั้ง", 1, A), Req(LimeId, "มะนาว", "ลูก", 1, A),
+                Req(chili, "พริก", "เม็ด", 5, A), Req(CorianderId, "ผักชี", "ต้น", 1, A)),
+            new(ObjectiveManager.ServePlateStepId, "ปิดเตา แล้วตักใส่ชามที่โต๊ะจัดจาน",
+                Req(ObjectiveManager.DishPlatedId, "ตักต้มข่าใส่ชาม", "ชาม", 1, State.Served)),
+            new(ObjectiveManager.ServeNpcStepId, "นำชามไปเสิร์ฟป้าแสงที่โต๊ะทานข้าว",
+                Req(ObjectiveManager.DishServedId, "เสิร์ฟป้าแสง", "ชาม", 1, State.Served)),
+        };
+
+        string[] herbs = { GalangalId, LemongrassId, KaffirLeafId };
+        m.orderRules = new List<OrderRule>();
+        foreach (string herb in herbs)
+        {
+            m.orderRules.Add(SoupRule(herb, HerbsBeforeBoil, "ควรรอให้กะทิเดือดก่อนใส่สมุนไพร",
+                "ใส่สมุนไพรก่อนกะทิเดือด", boiling: true));
+        }
+        m.orderRules.Add(SoupRule(chicken, ShrimpBeforeBoil, "ควรรอให้กะทิเดือดก่อนใส่ไก่",
+            "ใส่ไก่ก่อนกะทิเดือด", boiling: true));
+        m.orderRules.Add(SoupRule(chicken, ShrimpBeforeHerbs, "ควรต้มข่า ตะไคร้ ใบมะกรูดให้หอมก่อนใส่ไก่",
+            "ใส่ไก่ก่อนสมุนไพร", needs: herbs));
+        m.orderRules.Add(SoupRule(StrawMushroomId, HerbsBeforeBoil, "ควรรอให้กะทิเดือดก่อนใส่เห็ด",
+            "ใส่เห็ดก่อนกะทิเดือด", boiling: true));
+        m.orderRules.Add(SoupRule(fish, SoupSeasonBeforeShrimpCooked, "ควรรอให้ไก่สุกก่อนปรุงรส",
+            "ปรุงรสก่อนไก่สุก", cooked: true));
+        m.orderRules.Add(SoupRule(LimeId, LimeWhileBoiling, "ปิดไฟก่อนบีบมะนาว (ใส่ตอนเดือดน้ำแกงจะขม)",
+            "บีบมะนาวตอนยังเปิดไฟ (น้ำแกงขม)", heatOff: true));
+        m.orderRules.Add(SoupRule(chili, ChiliWhileBoiling, "ปิดไฟก่อนใส่พริก",
+            "ใส่พริกตอนยังเปิดไฟ", heatOff: true));
+        m.orderRules.Add(SoupRule(CorianderId, CorianderTooEarly, "ผักชีใส่ท้ายสุด หลังปรุงรสครบ",
+            "ใส่ผักชีก่อนปรุงรสครบ", needs: new[] { fish, LimeId }));
+
+        m.stirCheckpoints = new List<StirCheckpoint>();
+        tomKha = m;
         return m;
     }
 }

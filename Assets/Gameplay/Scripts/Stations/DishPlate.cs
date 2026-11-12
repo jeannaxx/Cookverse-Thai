@@ -137,7 +137,7 @@ public class DishPlate : MonoBehaviour, IMissionResettable
             }
 
             var soupBlock = new MaterialPropertyBlock();
-            Color color = r == chickenRenderer ? TintFor(summary) : new Color(0.93f, 0.48f, 0.18f);
+            Color color = r == chickenRenderer ? TintFor(summary) : summary.Menu.soupColor;
             soupBlock.SetColor(BaseColorId, color);
             soupBlock.SetColor(ColorId, color);
             r.SetPropertyBlock(soupBlock);
