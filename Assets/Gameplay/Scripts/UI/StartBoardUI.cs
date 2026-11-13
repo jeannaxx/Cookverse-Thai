@@ -72,11 +72,22 @@ public class StartBoardUI : MonoBehaviour
     // เปิดกระดาน · toMenuPage = ข้ามหน้าชื่อ (มีชื่อแล้ว เช่น กดเล่นใหม่)
     public void Open(bool toMenuPage)
     {
+        IgnorePlayerBody();
         if (!string.IsNullOrEmpty(ActionLog.PlayerName)) playerName = ActionLog.PlayerName;
         ShowPage(toMenuPage && IsValidName(playerName));
         PlaceInFrontOfPlayer();
         board.SetActive(true);
         IsOpen = true;
+    }
+
+    // ปุ่มกระดานมี Collider (ให้เลเซอร์/นิ้วกดโดน) แต่ห้ามขวางตัวผู้เล่น (CharacterController) ตอนเดิน
+    private void IgnorePlayerBody()
+    {
+        Collider[] buttons = board.GetComponentsInChildren<Collider>(true);
+        foreach (CharacterController body in FindObjectsByType<CharacterController>(FindObjectsInactive.Include))
+        {
+            foreach (Collider c in buttons) Physics.IgnoreCollision(body, c, true);
+        }
     }
 
     public void Close()

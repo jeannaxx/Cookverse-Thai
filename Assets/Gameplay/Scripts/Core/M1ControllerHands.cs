@@ -67,8 +67,17 @@ public class M1ControllerHands : MonoBehaviour
         rightHandPrefab = right;
     }
 
+    // พักไว้ก่อน (ผู้ใช้ขอ 13 พ.ย.): กลับไปใช้โมเดลจอยแบบเดิมให้เล่นได้ · จะเปิดกลับ ตั้งเป็น true
+    public static bool FeatureEnabled = false;
+
     private void Start()
     {
+        if (!FeatureEnabled)
+        {
+            enabled = false;
+            return;
+        }
+
         modality = FindAnyObjectByType<XRInputModalityManager>();
         if (modality == null)
         {
@@ -77,8 +86,16 @@ public class M1ControllerHands : MonoBehaviour
             return;
         }
 
-        sides[0] = Build(true, modality.leftController, leftHandPrefab);
-        sides[1] = Build(false, modality.rightController, rightHandPrefab);
+        try
+        {
+            sides[0] = Build(true, modality.leftController, leftHandPrefab);
+            sides[1] = Build(false, modality.rightController, rightHandPrefab);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[มือถือจอย] สร้างมือไม่สำเร็จ {e.GetType().Name}: {e.Message}", this);
+            enabled = false;
+        }
     }
 
     private void OnDestroy()
@@ -193,9 +210,20 @@ public class M1ControllerHands : MonoBehaviour
 
     private void LateUpdate()
     {
+        try { UpdateHands(); }
+        catch (Exception e)
+        {
+            // อย่าให้มือพังแล้วลากทั้งเกมค้าง: ปิดมือถือจอยแล้วรายงาน
+            Debug.LogError($"[มือถือจอย] ปิดตัวเองเพราะ {e.GetType().Name}: {e.Message}", this);
+            enabled = false;
+        }
+    }
+
+    private void UpdateHands()
+    {
         foreach (Side s in sides)
         {
-            if (s == null || s.root == null || !s.controller.activeInHierarchy) continue;
+            if (s == null || s.root == null || s.controller == null || !s.controller.activeInHierarchy) continue;
 
             float k = 1f - Mathf.Exp(-curlSpeed * Time.deltaTime);
             s.triggerValue = Mathf.Lerp(s.triggerValue, Read(s.trigger), k);
